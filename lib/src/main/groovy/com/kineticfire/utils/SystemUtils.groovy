@@ -25,6 +25,16 @@ final class SystemUtils {
 
    /**
     * Returns the username for the current active user as a String.
+    * <p>
+    * Requirements:
+    * <ol>
+    *    <li>Groovy</li>
+    * </ol>
+    * <p>
+    * Limitations:
+    * <ol>
+    *    <li>Linux</li>
+    * </ol>
     *
     * @return username for the current active user as a String
     */
@@ -35,6 +45,16 @@ final class SystemUtils {
 
    /**
     * Returns the UID of the current active user as an int or -1 if an error occurred.
+    * <p>
+    * Requirements:
+    * <ol>
+    *    <li>Groovy</li>
+    * </ol>
+    * <p>
+    * Limitations:
+    * <ol>
+    *    <li>Linux</li>
+    * </ol>
     *
     * @return the UID of the current active user as an int or -1 if an error occurred
     */
@@ -45,6 +65,16 @@ final class SystemUtils {
 
    /**
     * Returns the UID of the user with username 'username'.
+    * <p>
+    * Requirements:
+    * <ol>
+    *    <li>Groovy</li>
+    * </ol>
+    * <p>
+    * Limitations:
+    * <ol>
+    *    <li>Linux</li>
+    * </ol>
     *
     * @param username
     *    username of the user for whom to retrieve the UID
@@ -75,7 +105,7 @@ final class SystemUtils {
    /**
     * Validates the script at 'scriptPath' and returns a Map of the result.
     * <p>
-    * Uses 'shellcheck' for static analysis and linting tool for sh/bash scripts.  The 'shellcheck' program must be installed ('apt install shellcheck' or 'yum install shellcheck').
+    * Uses 'shellcheck' for static analysis and linting tool for sh/bash scripts.
     * <p>
     * Returns a result as a Map with key-value pairs:
     * <ul>
@@ -84,6 +114,18 @@ final class SystemUtils {
     *    <ol>out - the output returned by the process as a trimmed String, which could be an empty String</ol>
     *    <ol>err - contains the error output returned by the process as a trimmed String; only present if an an error occurred e.g. 'ok' is false and 'exitValue' is non-zero</ol>
     * </ul>
+    * <p>
+    * Requirements:
+    * <ol>
+    *    <li>Groovy</li>
+    *    <li>shellcheck</li>
+    * </ol>
+    * <p>
+    * Limitations:
+    * <ol>
+    *    <li>Linux</li>
+    *    <li>bash/sh scripts</li>
+    * </ol>
     *
     * @param script
     *    the path as a String to the sh/bash script to validate

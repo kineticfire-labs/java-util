@@ -46,6 +46,16 @@ final class ExecUtils {
     * Returns the output returned by the process as a trimmed String, which could be an empty String if the command didn't generate output.
     * <p>
     * This method is generally simpler to use than than the 'execWithException( String[] task )', however that method may be required over this one for complex commands/arguments.  This method is similar to 'exec( String task ), except that method will return a Map with results (success or failure) while this method returns a String on success and throws an exception on failure.
+    * <p>
+    * Requirements:
+    * <ol>
+    *    <li>Groovy</li>
+    * </ol>
+    * <p>
+    * Limitations:
+    * <ol>
+    *    <li>Linux</li>
+    * </ol>
     *
     * @param task
     *    the task (or command) to execute as a String
@@ -86,6 +96,16 @@ final class ExecUtils {
     * </ul>
     * <p>
     * This method is generally simpler to use than than the 'exec( String[] task )', however that method may be required over this one for complex commands/arguments.  This method is similar to 'execWithException( String task )', except that method returns a String result on success and throws an exception on failure while this method returns a Map with results (success or failure).
+    * <p>
+    * Requirements:
+    * <ol>
+    *    <li>Groovy</li>
+    * </ol>
+    * <p>
+    * Limitations:
+    * <ol>
+    *    <li>Linux</li>
+    * </ol>
     *
     * @param task
     *    the task (or command) to execute as a String
@@ -128,6 +148,16 @@ final class ExecUtils {
     * Returns the output returned by the process as a trimmed String, which could be an empty String if the command didn't generate output.
     * <p>
     * This method is needed to use over the simpler 'exec( String task )' when using complex commands/arguments.  This method is similar to 'exec( String[] task )', except that method returns a Map with results (success or failure) while this method returns a String result on succcess and throws an exception on failure.
+    * <p>
+    * Requirements:
+    * <ol>
+    *    <li>Groovy</li>
+    * </ol>
+    * <p>
+    * Limitations:
+    * <ol>
+    *    <li>Linux</li>
+    * </ol>
     *
     * @param task
     *    the task (or command) to execute as a String array, where the first item is the command and any subsequent items are arguments
@@ -170,6 +200,16 @@ final class ExecUtils {
     * </ul>
     * <p>
     * This method is needed to use over the simpler 'exec( String task )' when using complex commands/arguments. This method is similar to 'execWithException( String[] task )', except that method returns a String result on success and an exception on failure while this method returns a Map with results (success or failure).
+    * <p>
+    * Requirements:
+    * <ol>
+    *    <li>Groovy</li>
+    * </ol>
+    * <p>
+    * Limitations:
+    * <ol>
+    *    <li>Linux</li>
+    * </ol>
     *
     * @param task
     *    the task (or command) to execute as a String array, where the first item is the command and any subsequent items are arguments

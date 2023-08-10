@@ -28,8 +28,7 @@ import spock.lang.Timeout
  * Unit tests.
  *
  */
-// Set timeout for all feature methods.  Probably longer than is needed for a test.
-@Timeout( value = 5, unit = MINUTES )
+@Timeout( value = 1, unit = MINUTES )
 class SystemExecUtilsTest extends Specification {
 
     static final String SCRIPT_FILE_NAME  = 'test.sh'
@@ -44,7 +43,6 @@ class SystemExecUtilsTest extends Specification {
     def setup( ) {
         scriptFile = new File( tempDir.toString( ) + File.separatorChar + SCRIPT_FILE_NAME )
     }
-
 
 
 

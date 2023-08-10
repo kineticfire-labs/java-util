@@ -27,8 +27,7 @@ import spock.lang.Timeout
 /**
  * Unit tests.
  */
-// Set timeout for all feature methods.  Probably longer than is needed for a test.
-@Timeout( value = 5, unit = MINUTES )
+@Timeout( value = 1, unit = MINUTES )
 class ExecUtilsTest extends Specification {
 
     def "execWithException(String task) for successful command returns output"( ) {
