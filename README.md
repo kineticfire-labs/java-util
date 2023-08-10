@@ -1,5 +1,5 @@
 # java-utils
-java-utils provides Java utilities and more broadly for languages targeting the JVM.
+java-utils is a Java library that provides utilities for languages targeting the JVM (Java, Groovy, Clojure, etc.).
 
 
 # Table of Contents
