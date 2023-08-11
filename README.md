@@ -1,5 +1,5 @@
-# java-utils
-java-utils is a Java library that provides utilities for languages targeting the JVM (Java, Groovy, Clojure, etc.).
+# java-util
+java-util is a Java library that provides utilities for languages targeting the JVM (Java, Groovy, Clojure, etc.).
 
 
 # Table of Contents
@@ -10,7 +10,7 @@ java-utils is a Java library that provides utilities for languages targeting the
 
 
 # Key Capabilities
-Key capabilities of java-utils include:
+Key capabilities of java-util include:
 1. Ease of execution of commands on the command line with flexible return types (ExecUtils)
 2. Retrieving username and UID (SystemUtils)
 3. Validating bash/sh scripts (SystemUtils)
@@ -27,4 +27,4 @@ todo
 
 
 # License
-The java-utils project is released under [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+The java-util project is released under [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)
