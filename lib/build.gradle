@@ -30,23 +30,23 @@ repositories {
 
 dependencies {
     // Use the latest Groovy version for building this library
-    implementation 'org.codehaus.groovy:groovy-all:3.0.13'
+    implementation 'org.codehaus.groovy:groovy-all:' + findProperty( 'groovy-all.version' )
 
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
-    implementation 'com.google.guava:guava:31.1-jre'
+    implementation 'com.google.guava:guava:' + findProperty( 'guava.version' )
 
     // Use the awesome Spock testing and specification framework even with Java
-    testImplementation 'org.spockframework:spock-core:2.2-groovy-3.0'
-    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.spockframework:spock-core:' + findProperty( 'spock-core.version' )
+    testImplementation 'junit:junit:' + findProperty( 'junit.version' )
 
     // This dependency is exported to consumers, that is to say found on their compile classpath.
-    api 'org.apache.commons:commons-math3:3.6.1'
+    api 'org.apache.commons:commons-math3:' + findProperty( 'apache-commons-math3.version' )
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of( 11 )
+        languageVersion = JavaLanguageVersion.of( findProperty( 'javaLanguage.version' ) )
     }
 }
 
