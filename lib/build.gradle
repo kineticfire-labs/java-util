@@ -50,6 +50,21 @@ java {
     }
 }
 
+jar {
+    archiveBaseName = 'java-util'
+    archiveVersion = findProperty( 'java-util.jar.version' )
+
+    manifest {
+        attributes(
+            'Implementation-Vendor'  : 'KineticFire',
+            'Implementation-Title'   : 'java-util',
+            'Implementation-Version' : findProperty( 'java-util.jar.version'),
+            'Implementation-Project' : 'java-util',
+            'Implementation-Release' : findProperty( 'project.release'),
+        )
+    }
+}
+
 tasks.named( 'test' ) {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform( )

@@ -115,7 +115,7 @@ class ExecUtilsTest extends Specification {
 
     def "execWithException(String[] task) for failed command throws correct exception"( ) {
         given: "invalid command to execute"
-        String[] task = [ 'whoami', '--help', 'x' ]
+        String[] task = [ 'whoami', '--blah' ]
 
         when: "execute the command"
         String result = ExecUtils.execWithException( task )
@@ -150,7 +150,7 @@ class ExecUtilsTest extends Specification {
 
     def "exec(String[] task) for failed command returns correct exit value and error output"( ) {
         given: "an invalid command to execute"
-        String[] task = [ 'whoami', '--help', 'x' ]
+        String[] task = [ 'whoami', '--blah' ]
 
         when: "execute the command"
         def resultMap = ExecUtils.exec( task )
