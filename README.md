@@ -14,9 +14,9 @@ java-util is a Java library that provides utilities for languages targeting the 
 
 # Key Capabilities
 Key capabilities of java-util include:
-1. Ease of execution of commands on the command line with flexible return types (ExecUtils)
-2. Retrieving username and UID (SystemUtils)
-3. Validating bash/sh scripts (SystemUtils)
+1. Ease executing commands on the command line with flexible return types (util.ExecUtils)
+2. Retrieving username and UID (util.SystemUtils)
+3. Validating bash/sh scripts (util.SystemUtils)
 
 
 # Installation
