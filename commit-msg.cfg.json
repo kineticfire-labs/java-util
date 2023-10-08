@@ -11,7 +11,8 @@
       }
    },
    "scopes": [
-      "project": { 
+      {
+         "name": "project",
          "types": [
             "revert",
             "build",
@@ -20,7 +21,8 @@
             "chore"
          ]
       },
-      "lib": {
+      {
+         "name": "lib",
          "types": [
             "feat",
             "fix",
@@ -35,7 +37,8 @@
             "chore"
          ]
       },
-      "readme": {
+      {
+         "name": "readme",
          "types": [
             "docs"
          ]
