@@ -26,9 +26,12 @@
          "name": "lib",
          "types": [
             "feat",
-            "remove",
+            "more",
             "change",
             "fix",
+            "deprecate",
+            "remove",
+            "less",
             "refactor",
             "perf",
             "security",
