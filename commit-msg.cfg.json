@@ -1,7 +1,7 @@
 {
    "enabled": true,
    "length": {
-      "firstLine": {
+      "titleLine": {
          "min": 20,
          "max": 52
       },
@@ -15,6 +15,7 @@
          "name": "project",
          "types": [
             "revert",
+            "security",
             "build",
             "vendor",
             "ci",
@@ -25,9 +26,12 @@
          "name": "lib",
          "types": [
             "feat",
+            "remove",
+            "change",
             "fix",
             "refactor",
             "perf",
+            "security",
             "style",
             "test",
             "docs",
