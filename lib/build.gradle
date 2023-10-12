@@ -57,7 +57,7 @@ jar {
 
     manifest {
         attributes(
-            'Implementation-Vendor'  : 'KineticFire',
+            'Implementation-Vendor'  : 'KineticFire Labs',
             'Implementation-Title'   : 'java-util',
             'Implementation-Version' : getProperty( 'java-util.jar.version'),
             'Implementation-Project' : 'java-util',
