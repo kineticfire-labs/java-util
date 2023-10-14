@@ -31,14 +31,14 @@ repositories {
 
 dependencies {
     // Use the latest Groovy version for building this library
-    implementation 'org.codehaus.groovy:groovy-all:' + getProperty( 'groovy-all.version' )
+    implementation 'org.apache.groovy:groovy-all:' + getProperty( 'groovy-all.version' )
 
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation 'com.google.guava:guava:' + getProperty( 'guava.version' )
 
     // Use the awesome Spock testing and specification framework even with Java
     testImplementation 'org.spockframework:spock-core:' + getProperty( 'spock-core.version' )
-    testImplementation 'junit:junit:' + getProperty( 'junit.version' )
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:' + getProperty( 'junit.version' )
 
     // This dependency is exported to consumers, that is to say found on their compile classpath.
     api 'org.apache.commons:commons-math3:' + getProperty( 'apache-commons-math3.version' )
