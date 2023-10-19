@@ -113,13 +113,8 @@ public final class Exec {
 
          resultMap = execImpl( taskList, config, addEnv, removeEnv );
 
-         resultMap.remove( "outToFile" );
-         resultMap.remove( "errToFile" );
-         resultMap.remove( "errRedirect" );
-
          // has     : exitValue
          // may have: out, err
-         //
          
          if ( resultMap.get( "exitValue" ).equals( "0" ) ) { 
             resultMap.put( "success", "true" );
@@ -178,7 +173,7 @@ public final class Exec {
 
 
    /**
-    * Executes the task as a command line process and returns a Map result, throwing exceptions if they occur.
+    * Executes the task as a native command line process and returns a Map result, throwing exceptions if they occur.
     * <p>
     * This method provides a convenience wrapper around Java's ProcessBuilder and Process for simplifying configuration through convention, handling access to and buffering of process outputs, and promptly writing to the input stream and reading from the output stream to prevent process block or deadlock.
     * <p>
@@ -186,10 +181,16 @@ public final class Exec {
     * <p>
     * The optional config (which may be null) defines configuration as key-value pairs as follows:
     * <ul>
-    *    <li>trim - "false" to trim standard output and error output when not written to a file; defaults to "true"<li>
+    *    <li>trim - "false" to trim standard output and error output when not written to a file; defaults to "true"</li>
     *    <li>directory - the working directory in which the task should execute; defaults to the current directory from which the program is executed</li>
-    *    <li>redirectErrorStream - "true" to redirect the standard error to standard output; otherwise and default is not to redirect standard error</li>
-    *    <li>todo redirect to files</li>
+    *    <li>redirectErrToOut - "true" to redirect the standard error to standard output; otherwise and default is not to redirect standard error</li>
+    *
+    *    todo:
+    *    <li>redirectOutFilePath - file path and name</li>
+    *    <li>redirectOutType - overwrite, append</li>
+    *    <li>redirectErrFilePath - file path and name</li>
+    *    <li>redirectErrType - overwrite, append</li>
+    *
     * </ul>
     * <p>
     * The optional addEnv (which may be null) defines environment variables as key-value pairs to add when executing the task.
@@ -201,9 +202,6 @@ public final class Exec {
     *    <li>exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error</li>
     *    <li>out - the output returned by the process as a String, which could be an empty String; only present if the output wasn't redirected to a file</li>
     *    <li>err - contains the error output returned by the process as a String; only present if an an error occurred, e.g. exitValue is non-zero, and standard error wasn't merged with standard output and standard error wasn't redirected to a file</li>
-    *    <li>outToFile - String "true" if standard output was redirected to a file; only present for the "true" condition</li>
-    *    <li>errToFile - String "true" if standard error was redirected to a file; only present for the "true" condition</li>
-    *    <li>errRedirect - String "true" if standard error was merged with standard output or redirected to a file; only present for either or both of those conditions</li>
     * </ul>
     *
     * @param task
@@ -216,13 +214,19 @@ public final class Exec {
     *    a List of environment variables to remove; optional, can be null
     * @return a Map of the result of the command execution
     * @throws IllegalArgumentException
-    *    if an illegal or innapropriate argument was passed to this method
+    *    <ul>
+    *       <li>if an illegal or innapropriate argument was passed to this method</li>
+    *       <li>if configuring environment variables and the system does not allow such modifications</li>
+    *    </ul>
     * @throws IndexOutOfBoundsException
     *    if the task is an empty list
     * @throws IOException
     *    if an I/O error occurs
     * @throws NullPointerException
-    *    if an element in task list is null
+    *    <ul>
+    *       <li>if an element in task list is null, or</li>
+    *       <li>attempting to insert null key environment variables</li> 
+    *    </ul>
     * @throws SecurityException if a security manager exists and
     *    <ul>
     *       <li>when attemping to start the process</li>
@@ -237,13 +241,21 @@ public final class Exec {
     *       </ul>
     *    </ul>
     * @throws UnsupportedOperationException
-    *    if the operating system does not support the creation of processes
+    *    <ol>
+    *       <li>if the operating system does not support the creation of processes, or</li>
+    *       <li>if configuring environment variables and the system does not allow such modifications</li>
+    *    </ol>
     */
    private static Map<String,String> execImpl( List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv ) throws IOException { 
 
       Map<String,String> resultMap = new HashMap<String,String>( );
 
-      boolean trim = true;
+      boolean outToFile = false;   // 'true' if standard output is redirected to a file and false otherwise
+      boolean errToOut = false;    // 'true' if standard error is redirected to standard output and false otherwise
+      boolean errToFile = false;   // 'true' if standard error is redirected to a file and false otherwise
+      boolean errRedirect = false; // 'true' if standard error is being redirected to either standard output or to a file and false otherwise
+      boolean trim = true;         // 'true' to trim returned output and error streams and 'false' otherwise; does not apply to standard output and error redirected to a file
+
 
       ProcessBuilder processBuilder = new ProcessBuilder( task );
 
@@ -267,18 +279,18 @@ public final class Exec {
          //todo add tests
          // todo document
          // if specified, then redirect standard output to a file
-         if ( config.get( "redirectOutFile" ) != null ) {
+         if ( config.get( "redirectOutFilePath" ) != null ) {
+
+            outToFile = true;
 
             if ( config.get( "redirectOutType" ) == null ) {
-               throw new IllegalArgumentException( "Field 'redirectOutFile' is set in 'config', but field 'redirectOutType' is not set or null.  Must specify redirect output type as either 'to' or 'append'." );
+               throw new IllegalArgumentException( "Field 'redirectOutFilePath' is set in 'config', but field 'redirectOutType' is not set or null.  Must specify redirect output type as either 'to' or 'append'." );
             }
 
-            resultMap.put( "outToFile", "true" );
-
             // set the output file
-            File outFile = new File( config.get( "redirectOutFile" ) );
+            File outFile = new File( config.get( "redirectOutFilePath" ) );
 
-            if ( config.get( "redirectOutType" ).equalsIgnoreCase( "to" ) ) {
+            if ( config.get( "redirectOutType" ).equalsIgnoreCase( "overwrite" ) ) {
                // create file if it doesn't exist; if file exists, then discard previous contents
                processBuilder.redirectOutput( Redirect.to( outFile ) );
             } else if ( config.get( "redirectOutType" ).equalsIgnoreCase( "append" ) ) {
@@ -294,22 +306,30 @@ public final class Exec {
          //todo add tests
          // todo document
          //todo standard error file/redirect
-         //todo: set errToFile
+         //todo set errToFile = true, if redirected to file
+
 
          // redirect error stream to stdout if "true"
-         if ( config.get( "redirectErrorStream" ) != null ) {
-            if ( config.get( "redirectErrorStream" ).equalsIgnoreCase( "true" ) ) {
+         if ( config.get( "redirectErrToOut" ) != null ) {
+
+            if ( config.get( "redirectErrToOut" ).equalsIgnoreCase( "true" ) ) {
+
+               if ( errToFile ) {
+                  throw new IllegalArgumentException( "Inapproriate configuration in 'config'.  Can't both redirect standard error to standard output ('redirectErrToOut' is 'true') and redirect standard error to a file ('redirectErrToFile' is 'true')." );
+               }
+
                processBuilder.redirectErrorStream( true );
-               resultMap.put( "errToOut", "true" );
-            } else if ( config.get( "redirectErrorStream" ).equalsIgnoreCase( "true" ) ) {
+               errToOut = true;
+
+            } else if ( config.get( "redirectErrToOut" ).equalsIgnoreCase( "false" ) ) {
                // do nothing
             } else {
-               throw new IllegalArgumentException( "Illegal value '" + config.get( "redirectErrorStream" ) + "' for 'redirectErrorStream' in 'config'." );
+               throw new IllegalArgumentException( "Illegal value '" + config.get( "redirectErrToOut" ) + "' for 'redirectErrToOut' in 'config'." );
             }
          }
 
-         if ( resultMap.containsKey( "errToOut" ) || resultMap.containsKey( "errToFile" ) ) {
-            resultMap.put( "errRedirect", "true" );
+         if ( errToOut  || errToFile ) {
+            errRedirect = true;
          }
 
       }
@@ -334,7 +354,6 @@ public final class Exec {
 
       }
 
-
       Process proc = processBuilder.start( );
 
 
@@ -348,7 +367,8 @@ public final class Exec {
 
       resultMap.put( "exitValue", Integer.toString( proc.exitValue( ) ) );
 
-      if ( !resultMap.containsKey( "outToFile" ) ) {
+      if ( !outToFile ) {
+         // if output wasn't redirected to a file, so output is captured in the 'outSb' string buffer (which could be an empty string)
 
          String outString;
 
@@ -364,7 +384,8 @@ public final class Exec {
 
       if ( proc.exitValue( ) != 0 ) {
 
-         if ( !resultMap.containsKey( "errRedirect" ) ) {
+         if ( !errRedirect ) {
+            // if the process indicated an error (exit value > 0) and standard error wasn't redirected (to a file or to standard output), so error output is captured in the 'errSb' string buffer (which could be an empty string)
 
             String errString;
 
