@@ -57,24 +57,64 @@ java {
     }
 }
 
+tasks.named( 'test' ) {
+    // Use JUnit Platform for unit tests.
+    useJUnitPlatform( )
+}
+
 
 jar {
-    archiveBaseName = 'java-util'
-    archiveVersion = getProperty( 'java-util.jar.version' )
+    archiveBaseName = getProperty( 'java-util.lib.name' )
+    archiveVersion = getProperty( 'java-util.lib.version' )
 
     manifest {
         attributes(
             'Implementation-Vendor'  : 'KineticFire Labs',
-            'Implementation-Title'   : 'java-util',
-            'Implementation-Version' : getProperty( 'java-util.jar.version'),
+            'Implementation-Title'   : getProperty( 'java-util.lib.name' ),
+            'Implementation-Version' : getProperty( 'java-util.lib.version'),
+            'Implementation-Project' : 'java-util',
+            'Implementation-Release' : getProperty( 'project.release'),
+            'Sealed'                 : 'true'
+        )
+    }
+}
+
+task javadocJar( type: Jar ) {
+    archiveClassifier = 'javadoc'
+    from javadoc
+
+    archiveBaseName = 'java-util'
+    archiveVersion = getProperty( 'java-util.lib.version' )
+
+    manifest {
+        attributes(
+            'Implementation-Vendor'  : 'KineticFire Labs',
+            'Implementation-Title'   : getProperty( 'java-util.lib.name' ),
+            'Implementation-Version' : getProperty( 'java-util.lib.version'),
             'Implementation-Project' : 'java-util',
             'Implementation-Release' : getProperty( 'project.release'),
         )
     }
 }
 
+task sourcesJar( type: Jar ) {
+    archiveClassifier = 'sources'
+    from sourceSets.main.allSource
 
-tasks.named( 'test' ) {
-    // Use JUnit Platform for unit tests.
-    useJUnitPlatform( )
+    archiveBaseName = 'java-util'
+    archiveVersion = getProperty( 'java-util.lib.version' )
+
+    manifest {
+        attributes(
+            'Implementation-Vendor'  : 'KineticFire Labs',
+            'Implementation-Title'   : getProperty( 'java-util.lib.name' ),
+            'Implementation-Version' : getProperty( 'java-util.lib.version'),
+            'Implementation-Project' : 'java-util',
+            'Implementation-Release' : getProperty( 'project.release'),
+        )
+    }
+}
+
+artifacts {
+    archives javadocJar, sourcesJar
 }
