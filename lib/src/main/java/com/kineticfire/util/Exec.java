@@ -54,39 +54,39 @@ public final class Exec {
 
 
    /**
-    * Executes the command as a command line process under the current working directory using Groovy's String[].execute() method, and either returns a String result on success or throws an exception on failure.
+    * Executes the task ..., and either returns a String result on success or throws an exception on failure.
+    *
+    * if redirecting output to a file, then returns empty string regardless of what was captured on standard output and output to a file
     */
-   public static String execWithException( String[] task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv ) throws IOException { 
+   public static String execWithException( List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv ) throws IOException { 
 
       String out = ""; // return empty string, if redirect output to files
 
+      Map<String,String> resultMap = execImpl( task, config, addEnv, removeEnv );
+            /* return is 'resultMap', as below, or an exception:
+             *    <li>exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error</li>
+             *    <li>out       - the output returned by the process as a String, which could be an empty String; only present if the output wasn't redirected to a file</li>
+             *    <li>err       - contains the error output returned by the process as a String; only present if an an error occurred, e.g. exitValue is non-zero, and standard error wasn't merged with standard output and standard error wasn't redirected to a file</li>
+             */
 
-      /*
-      List<String> taskList = Arrays.asList( task );
-
-
-      if ( proc.exitValue( ) != 0 ) {
-         throw new IOException( "Executing command '" + task + "' failed with exit value " + proc.exitValue( ) + "." );
-
-
-      }
-         */
-
-         /* todo: if not redirecting err stream to stdout, then add error to exception message
+      if ( resultMap.get( "exitValue" ).equals( "0" ) ) { 
+         if ( resultMap.containsKey( "out" ) && resultMap.get( "out" ) != null ) {
+            out = resultMap.get( "out" );
+         }
+      } else if ( !resultMap.get( "exitValue" ).equals( "0" ) ) { 
+         //throw new IOException( "Executing command '" + task + "' failed with exit value " + proc.exitValue( ) + "." );
           
-          
-          //original groovy code for adding information about the error into the exception, if present
-          
-         StringBuffer sb = new StringBuffer( )
+         StringBuffer sb = new StringBuffer( );
 
-         sb.append( 'Executing command "' + task + '" failed with exit value ' + resultMap.get( 'exitValue' ) + '.' )
+         sb.append( "Executing command '" + task + "' failed with exit value '" + resultMap.get( "exitValue" ) + "." );
 
-         if ( !resultMap.get( 'err' ).equals( '' ) ) {
-            sb.append( '  ' + resultMap.get( 'err' ) )
+         if ( resultMap.containsKey( "err" ) && resultMap.get( "err" ) != ( null ) && !resultMap.get( "err" ).equals( "" ) ) {
+            sb.append( "  " + resultMap.get( "err" ) );
          }
 
-         throw new IOException( sb.toString( ) )
-         */
+         throw new IOException( sb.toString( ) );
+      }
+
 
       return( out );
 
@@ -94,27 +94,28 @@ public final class Exec {
 
 
    /**
-    * Returns a result as a Map with key-value pairs:
+    * Returns a result as a Map with key-value pairs, ... does not throw an exception.  Returns key 'success'.
     * <ul>
-    *    <ol>success - boolean true if the exec process was successful (exitValue is 0) and false otherwise (exitValue is non-zero)</ol>
-    *    <ol>exitValue - the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error</ol>
-    *    <ol>out - the output returned by the process as a trimmed String, which could be an empty String</ol>
-    *    <ol>err - contains the error output returned by the process as a trimmed String; only present if an an error occurred e.g. exitValue is non-zero</ol>
+    *    <li>success - boolean "true" if the task execution was successful (exitValue is 0) and false otherwise (exitValue is non-zero); always defined</li>
+    *    <li>exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error; defined unless an exception is thrown</li>
+    *    <li>out - the output returned by the process as a String (trimmed by default or if 'trimmed' is set to 'true' in the 'config', unless 'trimmed' set to 'false') if standard output wasn't redirected to a file; 'out' is populated even if the task execution resulted in an error (non-zero exitValue), unless stndard output was redirected to a file; not defined if standard output is redirected to a file or if an exception was thrown which is described in the error output</li>
+    *    <li>err - the error output returned by the process as a String (trimmed by default or if 'trimmed' is set to 'true' in the 'config', unless 'trimmed' set to 'false') or a description of the exception, if thrown, if standard error wasn't redirected to standard output or to a file; only present if an an execution error occurred (e.g. exitValue is non-zero) or if an exception was thrown, and standard error wasn't redirected to standard output or to a file</li>
     * </ul>
     */
-   public static Map<String,String> exec( String[] task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv ) { 
+   public static Map<String,String> exec( List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv ) { 
 
       Map<String,String> resultMap = new HashMap<String,String>( );
       resultMap.put( "success", "false" );
 
-      List<String> taskList = Arrays.asList( task );
-
       try {
 
-         resultMap = execImpl( taskList, config, addEnv, removeEnv );
+         resultMap = execImpl( task, config, addEnv, removeEnv );
+            /* return is 'resultMap', as below, or an exception:
+             *    <li>exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error</li>
+             *    <li>out       - the output returned by the process as a String, which could be an empty String; only present if the output wasn't redirected to a file</li>
+             *    <li>err       - contains the error output returned by the process as a String; only present if an an error occurred, e.g. exitValue is non-zero, and standard error wasn't merged with standard output and standard error wasn't redirected to a file</li>
+             */
 
-         // has     : exitValue
-         // may have: out, err
          
          if ( resultMap.get( "exitValue" ).equals( "0" ) ) { 
             resultMap.put( "success", "true" );
@@ -122,49 +123,20 @@ public final class Exec {
          // else: already set success->false
       
       } catch ( NullPointerException e ) {
-         // already set success->false
-         if ( e.getMessage( ) != null && e.getMessage( ) != "" ) {
-            resultMap.put( "err", e.getMessage( ) );
-         } else {
-            resultMap.put( "err", "NullPointerException" );
-         }
+         resultMap.put( "err", generateErrorMessageFromException( e ) );
       } catch ( IndexOutOfBoundsException e ) {
-         // already set success->false
-         if ( e.getMessage( ) != null && e.getMessage( ) != "" ) {
-            resultMap.put( "err", e.getMessage( ) );
-         } else {
-            resultMap.put( "err", "IndexOutOfBoundsException" );
-         }
+         resultMap.put( "err", generateErrorMessageFromException( e ) );
       } catch ( SecurityException e ) {
-         // already set success->false
-         if ( e.getMessage( ) != null && e.getMessage( ) != "" ) {
-            resultMap.put( "err", e.getMessage( ) );
-         } else {
-            resultMap.put( "err", "SecurityException" );
-         }
+         resultMap.put( "err", generateErrorMessageFromException( e ) );
       } catch ( UnsupportedOperationException e ) {
-         // already set success->false
-         if ( e.getMessage( ) != null && e.getMessage( ) != "" ) {
-            resultMap.put( "err", e.getMessage( ) );
-         } else {
-            resultMap.put( "err", "UnsupportedOperationException" );
-         }
+         resultMap.put( "err", generateErrorMessageFromException( e ) );
       } catch ( IOException e ) {
-         // already set success->false
-         if ( e.getMessage( ) != null && e.getMessage( ) != "" ) {
-            resultMap.put( "err", e.getMessage( ) );
-         } else {
-            resultMap.put( "err", "IOException" );
-         }
+         resultMap.put( "err", generateErrorMessageFromException( e ) );
       } catch ( Exception e ) {
-         // already set success->false
-         if ( e.getMessage( ) != null && e.getMessage( ) != "" ) {
-            resultMap.put( "err", e.getMessage( ) );
-         } else {
-            resultMap.put( "err", "Exception" );
-         }
+         resultMap.put( "err", generateErrorMessageFromException( e ) );
       }
       //todo are these all exceptions?
+      //todo are these all exceptions needed, or will getClass().getName() be sufficient?
 
 
       return( resultMap );
@@ -172,16 +144,31 @@ public final class Exec {
    }
 
 
+
+   private static String generateErrorMessageFromException( Exception e ) {
+
+      StringBuilder sb = new StringBuilder( );
+
+      sb.append( e.getClass( ).getName( ) );
+
+      if ( e.getMessage( ) != null && e.getMessage( ) != "" ) {
+         sb.append( ": " + e.getMessage( ) );
+      }
+
+      return( sb.toString( ) );
+   }
+
+
    /**
     * Executes the task as a native command line process and returns a Map result, throwing exceptions if they occur.
     * <p>
-    * This method provides a convenience wrapper around Java's ProcessBuilder and Process for simplifying configuration through convention, handling access to and buffering of process outputs, and promptly writing to the input stream and reading from the output stream to prevent process block or deadlock.
+    * This method provides a convenience wrapper around Java's ProcessBuilder and Process for simplifying configuration through convention, handling access to and buffering process outputs, and promptly writing to the input stream and reading from the output stream to prevent process block or deadlock.
     * <p>
     * The first item in the task list is treated as the command and any additional items are treated as parameters.
     * <p>
-    * The optional config (which may be null) defines configuration as key-value pairs as follows:
+    * The optional config (which may be null or empty) defines configuration as key-value pairs as follows:
     * <ul>
-    *    <li>trim - "false" to trim standard output and error output when not written to a file; defaults to "true"</li>
+    *    <li>trim - "true" to trim standard output and error output when not written to a file and "false" otherwise"; defaults to "true"</li>
     *    <li>directory - the working directory in which the task should execute; defaults to the current directory from which the program is executed</li>
     *    <li>redirectErrToOut - "true" to redirect the standard error to standard output; otherwise and default is not to redirect standard error</li>
     *
@@ -193,15 +180,15 @@ public final class Exec {
     *
     * </ul>
     * <p>
-    * The optional addEnv (which may be null) defines environment variables as key-value pairs to add when executing the task.
+    * The optional addEnv (which may be null or empty) defines environment variables as key-value pairs to add when executing the task.
     * <p>
-    * The optional removeEnv (which may be null) defines environment variables as a list to remove when executing the task.
+    * The optional removeEnv (which may be null or empty) defines environment variables as a list to remove when executing the task.
     * <p>
     * Returns a Map with key-value pairs:
     * <ul>
-    *    <li>exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error</li>
-    *    <li>out - the output returned by the process as a String, which could be an empty String; only present if the output wasn't redirected to a file</li>
-    *    <li>err - contains the error output returned by the process as a String; only present if an an error occurred, e.g. exitValue is non-zero, and standard error wasn't merged with standard output and standard error wasn't redirected to a file</li>
+    *    <li>exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>
+    *    <li>out - the output returned by the process as a String, which could be an empty String; only defined if the output wasn't redirected to a file</li>
+    *    <li>err - contains the error output returned by the process as a String; only defined if an an error occurred, e.g. exitValue is non-zero, and standard error wasn't merged with standard output and standard error wasn't redirected to a file</li>
     * </ul>
     *
     * @param task
@@ -225,7 +212,8 @@ public final class Exec {
     * @throws NullPointerException
     *    <ul>
     *       <li>if an element in task list is null, or</li>
-    *       <li>attempting to insert null key environment variables</li> 
+    *       <li>attempting to add null key environment variables, or</li> 
+    *       <li>if defining an output file with a null pathname</li>
     *    </ul>
     * @throws SecurityException if a security manager exists and
     *    <ul>
@@ -284,7 +272,7 @@ public final class Exec {
             outToFile = true;
 
             if ( config.get( "redirectOutType" ) == null ) {
-               throw new IllegalArgumentException( "Field 'redirectOutFilePath' is set in 'config', but field 'redirectOutType' is not set or null.  Must specify redirect output type as either 'to' or 'append'." );
+               throw new IllegalArgumentException( "Field 'redirectOutFilePath' is set in 'config', but field 'redirectOutType' is not set or null.  Must specify redirect output type as either 'overwrite' or 'append'." );
             }
 
             // set the output file
@@ -303,10 +291,32 @@ public final class Exec {
          }
 
 
+
          //todo add tests
-         // todo document
-         //todo standard error file/redirect
-         //todo set errToFile = true, if redirected to file
+         // todo document, including the exceptions
+         // if specified, then redirect standard output to a file
+         if ( config.get( "redirectErrFilePath" ) != null ) {
+
+            errToFile = true;
+
+            if ( config.get( "redirectErrType" ) == null ) {
+               throw new IllegalArgumentException( "Field 'redirectErrFilePath' is set in 'config', but field 'redirectErrType' is not set or null.  Must specify redirect output type as either 'overwrite' or 'append'." );
+            }
+
+            // set the output file
+            File errFile = new File( config.get( "redirectErrFilePath" ) );
+
+            if ( config.get( "redirectErrType" ).equalsIgnoreCase( "overwrite" ) ) {
+               // create file if it doesn't exist; if file exists, then discard previous contents
+               processBuilder.redirectError( Redirect.to( errFile ) );
+            } else if ( config.get( "redirectErrType" ).equalsIgnoreCase( "append" ) ) {
+               // create file if it doesn't exist; if file exists, then add contents to the end of existing contents
+               processBuilder.redirectError( Redirect.appendTo( errFile ) );
+            } else {
+               throw new IllegalArgumentException( "Illegal value '" + config.get( "redirectErrType" ) + "' for 'redirectErrType' in 'config'." );
+            }
+
+         }
 
 
          // redirect error stream to stdout if "true"
@@ -315,7 +325,7 @@ public final class Exec {
             if ( config.get( "redirectErrToOut" ).equalsIgnoreCase( "true" ) ) {
 
                if ( errToFile ) {
-                  throw new IllegalArgumentException( "Inapproriate configuration in 'config'.  Can't both redirect standard error to standard output ('redirectErrToOut' is 'true') and redirect standard error to a file ('redirectErrToFile' is 'true')." );
+                  throw new IllegalArgumentException( "Illegal configuration in 'config'.  Can't both redirect standard error to standard output ('redirectErrToOut' is 'true') and redirect standard error to a file ('redirectErrToFile' is 'true')." );
                }
 
                processBuilder.redirectErrorStream( true );
@@ -356,6 +366,7 @@ public final class Exec {
 
       Process proc = processBuilder.start( );
 
+      //todo can only one of out/err be re-directed to a file, and the other one not?
 
       //todo support err redirect to stdout, and file output
 
@@ -432,31 +443,12 @@ public final class Exec {
       boolean interrupted = false;
 
       try {
-
-         try { 
-            outThread.join( );
-         } catch ( InterruptedException ignore ) { 
-            interrupted = true;
-         }
-
-         try { 
-            errThread.join( ); 
-         } catch ( InterruptedException ignore ) { 
-            interrupted = true; 
-         }
-
-         try { 
-            proc.waitFor( );
-         } catch ( InterruptedException ignore ) { 
-            interrupted = true; 
-         }
-
+         try { outThread.join( ); } catch ( InterruptedException ignore ) { interrupted = true; }
+         try { errThread.join( ); } catch ( InterruptedException ignore ) { interrupted = true; }
+         try { proc.waitFor( ); } catch ( InterruptedException ignore ) { interrupted = true; }
          closeStreams( proc );
-
       } finally {
-         if ( interrupted ) {
-            Thread.currentThread( ).interrupt( );
-         }
+         if ( interrupted ) Thread.currentThread( ).interrupt( );
       }
 
    }

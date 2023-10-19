@@ -362,6 +362,57 @@ class ExecUtilsTest extends Specification {
     }
 
 
+    // ********************************************************
+    // execImpl
+    //      - x, config, x, x
+    //           - redirectOutFilePath
+    //           - redirectOutType
+    // ********************************************************
+
+
+    def "execImpl(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) when redirecting output to file valid task"( ) {
+
+        given: "valid command to run"
+        List<String> task = Arrays.asList( 'id', '-un' )
+        Map<String,String> cfg = new HashMap<String,String>( )
+        cfg.put( 'redirectOutFilePath', '/home/user/Downloads/blah.txt' )
+        cfg.put( 'redirectOutType', 'overwrite' )
+
+        when: "execute the command"
+        Map<String,String> resultMap = Exec.execImpl( task, cfg, null, null )
+
+        then: "map key 'exitValue' is '0'"
+        resultMap.exitValue.equals( '0' )
+
+        and: "map key 'out' is not present"
+        resultMap.containsKey( 'err' ) == false
+
+        //todo
+        and: "map key 'err' is not present"
+        resultMap.containsKey( 'err' ) == false
+    }
+
+    def "execImpl(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) when redirecting output to file invalid task"( ) {
+
+        given: "valid command to run"
+        List<String> task = Arrays.asList( 'id', '-j' )
+        Map<String,String> cfg = new HashMap<String,String>( )
+        cfg.put( 'redirectOutFilePath', '/home/user/Downloads/blah.txt' )
+        cfg.put( 'redirectOutType', 'overwrite' )
+
+        when: "execute the command"
+        Map<String,String> resultMap = Exec.execImpl( task, cfg, null, null )
+
+        then: "map key 'exitValue' is '1'"
+        resultMap.exitValue.equals( '1' )
+
+        and: "map key 'out' is not present"
+        resultMap.containsKey( 'out' ) == false
+
+        //todo
+        and: "map key 'err' is not present"
+        resultMap.err.contains( 'invalid option' )
+    }
 
     /* todo
         - out to file
@@ -464,25 +515,24 @@ class ExecUtilsTest extends Specification {
         resultMap.containsKey( 'err' ) == false
     }
 
-    //todo
-
-    /*
     def "execImpl(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) returns correctly with one env var in 'removeEnv' to remove"( ) {
 
         given: "command to execute to get all env vars, and a List of env vars to remove"
         List<String> task = Arrays.asList( 'printenv' )
+        Map<String,String> addEnv = new HashMap<String,String>( )
+        addEnv.put( 'GREET', 'HOWDY' )
         List<String> removeEnv = new ArrayList<String>( )
-        removeEnv.add( 'RMME' )
+        removeEnv.add( 'GREET' )
+
 
         when: "execute the command"
-        Map<String,String> resultMap = Exec.execImpl( task, null, null, removeEnv )
+        Map<String,String> resultMap = Exec.execImpl( task, null, addEnv, removeEnv )
 
         then: "map key 'exitValue' is '0'"
         resultMap.exitValue.equals( '0' )
 
-        and: "returns the correct username from executing the command in map key 'out'"
-        String usernameExpected = System.properties[ 'user.name' ]
-        usernameExpected.equals( resultMap.out )
+        and: "returns in 'out' the environment variables without the 'GREET' env var"
+        !resultMap.out.contains( 'GREET=' )
 
         and: "map key 'err' is not present"
         resultMap.containsKey( 'err' ) == false
@@ -492,23 +542,25 @@ class ExecUtilsTest extends Specification {
 
         given: "command to execute to get all env vars, and a List of env vars to remove"
         List<String> task = Arrays.asList( 'printenv' )
+        Map<String,String> addEnv = new HashMap<String,String>( )
+        addEnv.put( 'GREET1', 'HI' )
+        addEnv.put( 'GREET2', 'HEY' )
         List<String> removeEnv = new ArrayList<String>( )
-        removeEnv.add( 'RMME1' )
-        removeEnv.add( 'RMME2' )
+        removeEnv.add( 'GREET1' )
+        removeEnv.add( 'GREET2' )
 
         when: "execute the command"
-        Map<String,String> resultMap = Exec.execImpl( task, null, null, removeEnv )
+        Map<String,String> resultMap = Exec.execImpl( task, null, addEnv, removeEnv )
 
         then: "map key 'exitValue' is '0'"
         resultMap.exitValue.equals( '0' )
 
-        and: "returns the correct username from executing the command in map key 'out'"
-        String usernameExpected = System.properties[ 'user.name' ]
-        usernameExpected.equals( resultMap.out )
+        and: "returns in 'out' the environment variables without the 'GREET1' and 'GREET2' env vars"
+        !resultMap.out.contains( 'GREET1=' )
+        !resultMap.out.contains( 'GREET2=' )
 
         and: "map key 'err' is not present"
         resultMap.containsKey( 'err' ) == false
     }
-    */
 
 }
