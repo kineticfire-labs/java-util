@@ -238,6 +238,7 @@ public final class Exec {
 
       Map<String,String> resultMap = new HashMap<String,String>( );
 
+      // define helper flags
       boolean outToFile = false;   // 'true' if standard output is redirected to a file and false otherwise
       boolean errToOut = false;    // 'true' if standard error is redirected to standard output and false otherwise
       boolean errToFile = false;   // 'true' if standard error is redirected to a file and false otherwise
@@ -264,16 +265,20 @@ public final class Exec {
             processBuilder.directory( new File( config.get( "directory" ) ) );
          }
 
+
+
+         if ( config.get( "redirectOutFilePath" ) != null && config.get( "redirectOutType" ) == null ) {
+               throw new IllegalArgumentException( "Field 'redirectOutFilePath' is set in 'config', but field 'redirectOutType' is not set or null.  Must specify redirect output type as either 'overwrite' or 'append'." );
+         } else if ( config.get( "redirectOutType" ) != null && config.get( "redirectOutFilePath" ) == null ) {
+               throw new IllegalArgumentException( "Field 'redirectOutType' is set in 'config', but field 'redirectOutFilePath' is not set or null." );
+         }
+
          //todo add tests
          // todo document
          // if specified, then redirect standard output to a file
          if ( config.get( "redirectOutFilePath" ) != null ) {
 
             outToFile = true;
-
-            if ( config.get( "redirectOutType" ) == null ) {
-               throw new IllegalArgumentException( "Field 'redirectOutFilePath' is set in 'config', but field 'redirectOutType' is not set or null.  Must specify redirect output type as either 'overwrite' or 'append'." );
-            }
 
             // set the output file
             File outFile = new File( config.get( "redirectOutFilePath" ) );
@@ -292,16 +297,18 @@ public final class Exec {
 
 
 
+         if ( config.get( "redirectErrFilePath" ) != null && config.get( "redirectErrType" ) == null ) {
+               throw new IllegalArgumentException( "Field 'redirectErrFilePath' is set in 'config', but field 'redirectErrType' is not set or null.  Must specify redirect output type as either 'overwrite' or 'append'." );
+         } else if ( config.get( "redirectErrType" ) != null && config.get( "redirectErrFilePath" ) == null ) {
+               throw new IllegalArgumentException( "Field 'redirectErrType' is set in 'config', but field 'redirectErrFilePath' is not set or null." );
+         }
+
          //todo add tests
          // todo document, including the exceptions
          // if specified, then redirect standard output to a file
          if ( config.get( "redirectErrFilePath" ) != null ) {
 
             errToFile = true;
-
-            if ( config.get( "redirectErrType" ) == null ) {
-               throw new IllegalArgumentException( "Field 'redirectErrFilePath' is set in 'config', but field 'redirectErrType' is not set or null.  Must specify redirect output type as either 'overwrite' or 'append'." );
-            }
 
             // set the output file
             File errFile = new File( config.get( "redirectErrFilePath" ) );
@@ -324,12 +331,13 @@ public final class Exec {
 
             if ( config.get( "redirectErrToOut" ).equalsIgnoreCase( "true" ) ) {
 
+               errToOut = true;
+
                if ( errToFile ) {
                   throw new IllegalArgumentException( "Illegal configuration in 'config'.  Can't both redirect standard error to standard output ('redirectErrToOut' is 'true') and redirect standard error to a file ('redirectErrToFile' is 'true')." );
                }
 
                processBuilder.redirectErrorStream( true );
-               errToOut = true;
 
             } else if ( config.get( "redirectErrToOut" ).equalsIgnoreCase( "false" ) ) {
                // do nothing
@@ -366,20 +374,16 @@ public final class Exec {
 
       Process proc = processBuilder.start( );
 
-      //todo can only one of out/err be re-directed to a file, and the other one not?
-
-      //todo support err redirect to stdout, and file output
-
       StringBuffer outSb = new StringBuffer( );
       StringBuffer errSb = new StringBuffer( );
 
       waitForProcessOutput( proc, outSb, errSb );
 
-
       resultMap.put( "exitValue", Integer.toString( proc.exitValue( ) ) );
 
       if ( !outToFile ) {
-         // if output wasn't redirected to a file, so output is captured in the 'outSb' string buffer (which could be an empty string)
+         // if output wasn't redirected to a file, then output is captured in the 'outSb' string buffer (which could be an empty string)
+            // 'out' will be defined unless (1) standard output was redirected to a file or (2) an exception occurred
 
          String outString;
 
@@ -397,6 +401,7 @@ public final class Exec {
 
          if ( !errRedirect ) {
             // if the process indicated an error (exit value > 0) and standard error wasn't redirected (to a file or to standard output), so error output is captured in the 'errSb' string buffer (which could be an empty string)
+               // 'err' will only be defined when a process exit value was non-zero and not redirected. So 'err' is only defined when (1) an exception didn't occur so the task ran, (2) the task produced a non-zero exit value, (3) error was not redirected to standard out, and (4) error was not directed to a file
 
             String errString;
 
