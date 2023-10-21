@@ -131,11 +131,12 @@ public final class Exec {
       String out = ""; // return empty string (unless exception thrown)
 
       Map<String,String> resultMap = execImpl( task, config, addEnv, removeEnv );
-            /* return is 'resultMap', as below, or an exception:
-             *    <li>exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error</li>
-             *    <li>out       - the output returned by the process as a String, which could be an empty String; only present if the output wasn't redirected to a file</li>
-             *    <li>err       - contains the error output returned by the process as a String; only present if an an error occurred, e.g. exitValue is non-zero, and standard error wasn't merged with standard output and standard error wasn't redirected to a file</li>
+            /* return is as below, or an exception is thrown:
+             *    - exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error
+             *    - out       - the output returned by the process as a String, which could be an empty String; only present if the output wasn't redirected to a file
+             *    - err       - contains the error output returned by the process as a String; only present if an an error occurred, e.g. exitValue is non-zero, and standard error wasn't merged with standard output and standard error wasn't redirected to a file
              */
+
 
       if ( resultMap.get( "exitValue" ).equals( "0" ) ) {
 
@@ -258,13 +259,13 @@ public final class Exec {
       try {
 
          resultMap = execImpl( task, config, addEnv, removeEnv );
-            /* return is 'resultMap', as below, or an exception:
-             *    <li>exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error</li>
-             *    <li>out       - the output returned by the process as a String, which could be an empty String; only present if the output wasn't redirected to a file</li>
-             *    <li>err       - contains the error output returned by the process as a String; only present if an an error occurred, e.g. exitValue is non-zero, and standard error wasn't merged with standard output and standard error wasn't redirected to a file</li>
+            /* return is as below, or an exception is thrown:
+             *    - exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error
+             *    - out       - the output returned by the process as a String, which could be an empty String; only present if the output wasn't redirected to a file
+             *    - err       - contains the error output returned by the process as a String; only present if an an error occurred, e.g. exitValue is non-zero, and standard error wasn't merged with standard output and standard error wasn't redirected to a file
              */
-
          
+
          if ( resultMap.get( "exitValue" ).equals( "0" ) ) { 
             resultMap.put( "success", "true" );
          }
@@ -383,7 +384,7 @@ public final class Exec {
 
       Map<String,String> resultMap = new HashMap<String,String>( );
 
-      // define helper flags
+      // define flags
       boolean outToFile = false;   // 'true' if standard output is redirected to a file and false otherwise
       boolean errToOut = false;    // 'true' if standard error is redirected to standard output and false otherwise
       boolean errToFile = false;   // 'true' if standard error is redirected to a file and false otherwise
@@ -411,15 +412,12 @@ public final class Exec {
          }
 
 
-
          if ( config.get( "redirectOutFilePath" ) != null && config.get( "redirectOutType" ) == null ) {
                throw new IllegalArgumentException( "Field 'redirectOutFilePath' is set in 'config', but field 'redirectOutType' is not set or null.  Must specify redirect output type as either 'overwrite' or 'append'." );
          } else if ( config.get( "redirectOutType" ) != null && config.get( "redirectOutFilePath" ) == null ) {
                throw new IllegalArgumentException( "Field 'redirectOutType' is set in 'config', but field 'redirectOutFilePath' is not set or null." );
          }
 
-         //todo add tests
-         // todo document
          // if specified, then redirect standard output to a file
          if ( config.get( "redirectOutFilePath" ) != null ) {
 
@@ -441,15 +439,12 @@ public final class Exec {
          }
 
 
-
          if ( config.get( "redirectErrFilePath" ) != null && config.get( "redirectErrType" ) == null ) {
                throw new IllegalArgumentException( "Field 'redirectErrFilePath' is set in 'config', but field 'redirectErrType' is not set or null.  Must specify redirect output type as either 'overwrite' or 'append'." );
          } else if ( config.get( "redirectErrType" ) != null && config.get( "redirectErrFilePath" ) == null ) {
                throw new IllegalArgumentException( "Field 'redirectErrType' is set in 'config', but field 'redirectErrFilePath' is not set or null." );
          }
 
-         //todo add tests
-         // todo document, including the exceptions
          // if specified, then redirect standard output to a file
          if ( config.get( "redirectErrFilePath" ) != null ) {
 
