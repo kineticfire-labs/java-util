@@ -29,7 +29,7 @@ import java.io.IOException;
 
 
 //todo remove references to Groovy's String
-
+//todo update class docs
 
 
 /**
@@ -53,14 +53,82 @@ import java.io.IOException;
 public final class Exec {
 
 
+    //todo if redirecting output to a file, then returns empty string regardless of what was captured on standard output and output to a file
+    //todo if method throws exception on any error, then can't redirect err to to out or redirect err to file.  because then couldn't see err to throw exception.
+    //todo what error is thrown if the task itself errs... TaskExecutionException?
+   
    /**
-    * Executes the task ..., and either returns a String result on success or throws an exception on failure.
+    * Executes the task as a native command line process and returns as a String a successful result, throwing exceptions on any task execution failure.
+    * <p>
+    * This method provides a convenience wrapper around Java's ProcessBuilder and Process for simplifying configuration through convention, handling access to and buffering process outputs, and promptly writing to the input stream and reading from the output stream to prevent process block or deadlock.
+    * <p>
+    * This method is equivalent to 'exec(...)', except that method always returns a Map&lt;String,String&gt; result and never throws an exception while this method returns a String if succesful and otherwise throws an exception on any failure.  This method is applicable to cases for executing a command and receiving a String result (without checking for success or presence of the key in the map) and responding to any error in try-catch blocks; or allowing the error to be thrown, which can be useful in test setups.
+    * <p>
+    * The first item in the task list is treated as the command and any additional items are treated as parameters.
+    * <p>
+    * The optional config (which may be null or empty) defines configuration as key-value pairs as follows:
+    * <ul>
+    *    <li>trim - "true" to trim standard output and error output when not written to a file and "false" otherwise"; defaults to "true"</li>
+    *    <li>directory - the working directory in which the task should execute; defaults to the current directory from which the program is executed</li>
+    *    <li>redirectErrToOut - "true" to redirect the standard error to standard output; otherwise and default is not to redirect standard error; cannot be used in combination with 'redirectErrToFile' otherwise an exception will be thrown</li>
+    *    <li>redirectOutFilePath - redirect standard output by providing a file path and name of the output file; must also define 'redirectOutType' otherwise an exception is thrown</li>
+    *    <li>redirectOutType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents</li>
+    *    <li>redirectErrFilePath - redirect standard error by providing a file path and name of the error file; must also define 'redirectErrType' otherwise an exception is thrown; cannot use in conjection with 'redirectErrToFile' otherwise an error is thrown</li>
+    *    <li>redirectErrType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents</li>
+    * </ul>
+    * <p>
+    * The optional addEnv (which may be null or empty) defines environment variables as key-value pairs to add when executing the task.
+    * <p>
+    * The optional removeEnv (which may be null or empty) defines environment variables as a list to remove when executing the task.
+    * <p>
+    * Returns a String result of the task execution on success, and throws an exception on any error.
     *
-    * if redirecting output to a file, then returns empty string regardless of what was captured on standard output and output to a file
+    * @param task
+    *    the task to execute as a String List, where the first item is the command and any subsequent items are arguments
+    * @param config
+    *    a Map of key-value pairs defining the configuration; optional, can be empty or null
+    * @param addEnv
+    *    a Map of key-value of environment variables to add; optional, can be empty or null
+    * @param removeEnv
+    *    a List of environment variables to remove; optional, can be empty or null
+    * @return a String result of the command execution
+    * @throws IllegalArgumentException
+    *    <ul>
+    *       <li>if an illegal or innapropriate argument was passed to this method</li>
+    *       <li>if configuring environment variables and the system does not allow such modifications</li>
+    *    </ul>
+    * @throws IndexOutOfBoundsException
+    *    if the task is an empty list
+    * @throws IOException
+    *    if an I/O error occurs
+    * @throws NullPointerException
+    *    <ul>
+    *       <li>if an element in task list is null, or</li>
+    *       <li>attempting to add null key environment variables, or</li> 
+    *       <li>if defining an output file with a null pathname</li>
+    *    </ul>
+    * @throws SecurityException if a security manager exists and
+    *    <ul>
+    *       <li>when attemping to start the process</li>
+    *       <ul>
+    *          <li>its checkExec method doesn't allow creation of the subprocess, or</li>
+    *          <li>the standard input to the subprocess was redirected from a file and the security manager's checkRead method denies read access to the file, or</li>
+    *          <li>the standard output or standard error of the subprocess was redirected to a file and the security manager's checkWrite method denies write access to the file, or</li>
+    *       </ul>
+    *       <li>when attemping to configure the environment variables</li>
+    *       <ul>
+    *          <li>its checkPermission method doesn't allow access to the process environment</li>
+    *       </ul>
+    *    </ul>
+    * @throws UnsupportedOperationException
+    *    <ol>
+    *       <li>if the operating system does not support the creation of processes, or</li>
+    *       <li>if configuring environment variables and the system does not allow such modifications</li>
+    *    </ol>
     */
    public static String execWithException( List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv ) throws IOException { 
 
-      String out = ""; // return empty string, if redirect output to files
+      String out = ""; // return empty string (unless exception thrown)
 
       Map<String,String> resultMap = execImpl( task, config, addEnv, removeEnv );
             /* return is 'resultMap', as below, or an exception:
@@ -69,22 +137,26 @@ public final class Exec {
              *    <li>err       - contains the error output returned by the process as a String; only present if an an error occurred, e.g. exitValue is non-zero, and standard error wasn't merged with standard output and standard error wasn't redirected to a file</li>
              */
 
-      if ( resultMap.get( "exitValue" ).equals( "0" ) ) { 
+      if ( resultMap.get( "exitValue" ).equals( "0" ) ) {
+
+         // key 'out' may not be defined, even for exitValue=0, if output redirected to file
          if ( resultMap.containsKey( "out" ) && resultMap.get( "out" ) != null ) {
             out = resultMap.get( "out" );
          }
+
       } else if ( !resultMap.get( "exitValue" ).equals( "0" ) ) { 
-         //throw new IOException( "Executing command '" + task + "' failed with exit value " + proc.exitValue( ) + "." );
           
          StringBuffer sb = new StringBuffer( );
 
          sb.append( "Executing command '" + task + "' failed with exit value '" + resultMap.get( "exitValue" ) + "." );
 
+         // key 'err' may not be defined, even in error condition, if error redirected
          if ( resultMap.containsKey( "err" ) && resultMap.get( "err" ) != ( null ) && !resultMap.get( "err" ).equals( "" ) ) {
             sb.append( "  " + resultMap.get( "err" ) );
          }
 
          throw new IOException( sb.toString( ) );
+         //todo throw a TaskExecutionException??
       }
 
 
@@ -101,6 +173,82 @@ public final class Exec {
     *    <li>out - the output returned by the process as a String (trimmed by default or if 'trimmed' is set to 'true' in the 'config', unless 'trimmed' set to 'false') if standard output wasn't redirected to a file; 'out' is populated even if the task execution resulted in an error (non-zero exitValue), unless stndard output was redirected to a file; not defined if standard output is redirected to a file or if an exception was thrown which is described in the error output</li>
     *    <li>err - the error output returned by the process as a String (trimmed by default or if 'trimmed' is set to 'true' in the 'config', unless 'trimmed' set to 'false') or a description of the exception, if thrown, if standard error wasn't redirected to standard output or to a file; only present if an an execution error occurred (e.g. exitValue is non-zero) or if an exception was thrown, and standard error wasn't redirected to standard output or to a file</li>
     * </ul>
+    */
+
+
+   /**
+    * Executes the task as a native command line process and returns a Map result, without throwing exceptions.
+    * <p>
+    * This method provides a convenience wrapper around Java's ProcessBuilder and Process for simplifying configuration through convention, handling access to and buffering process outputs, and promptly writing to the input stream and reading from the output stream to prevent process block or deadlock.
+    * <p>
+    * This method is equivalent to 'execWithException(...)', except that method returns a String if successful otherwise throws an exception on any error while this method returns a Map&lt;String,String&gt;result and does not throw exceptions.
+    * <p>
+    * The first item in the task list is treated as the command and any additional items are treated as parameters.
+    * <p>
+    * The optional config (which may be null or empty) defines configuration as key-value pairs as follows:
+    * <ul>
+    *    <li>trim - "true" to trim standard output and error output when not written to a file and "false" otherwise"; defaults to "true"</li>
+    *    <li>directory - the working directory in which the task should execute; defaults to the current directory from which the program is executed</li>
+    *    <li>redirectErrToOut - "true" to redirect the standard error to standard output; otherwise and default is not to redirect standard error; cannot be used in combination with 'redirectErrToFile' otherwise an exception will be thrown</li>
+    *    <li>redirectOutFilePath - redirect standard output by providing a file path and name of the output file; must also define 'redirectOutType' otherwise an exception is thrown</li>
+    *    <li>redirectOutType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents</li>
+    *    <li>redirectErrFilePath - redirect standard error by providing a file path and name of the error file; must also define 'redirectErrType' otherwise an exception is thrown; cannot use in conjection with 'redirectErrToFile' otherwise an error is thrown</li>
+    *    <li>redirectErrType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents</li>
+    * </ul>
+    * <p>
+    * The optional addEnv (which may be null or empty) defines environment variables as key-value pairs to add when executing the task.
+    * <p>
+    * The optional removeEnv (which may be null or empty) defines environment variables as a list to remove when executing the task.
+    * <p>
+    * Returns a Map with key-value pairs, unless an exception is thrown:
+    * <ul>
+    *    <li>exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>
+    *    <li>out - the output returned by the process as a String, which could be an empty String; defined unless the output was redirected to a file</li>
+    *    <li>err - contains the error output returned by the process as a String; defined unless an an error occurred (e.g. exitValue is non-zero), standard error wasn't merged with standard output, and standard error wasn't redirected to a file</li>
+    * </ul>
+    *
+    * @param task
+    *    the task to execute as a String List, where the first item is the command and any subsequent items are arguments
+    * @param config
+    *    a Map of key-value pairs defining the configuration; optional, can be empty or null
+    * @param addEnv
+    *    a Map of key-value of environment variables to add; optional, can be empty or null
+    * @param removeEnv
+    *    a List of environment variables to remove; optional, can be empty or null
+    * @return a Map of the result of the command execution
+    * @throws IllegalArgumentException
+    *    <ul>
+    *       <li>if an illegal or innapropriate argument was passed to this method</li>
+    *       <li>if configuring environment variables and the system does not allow such modifications</li>
+    *    </ul>
+    * @throws IndexOutOfBoundsException
+    *    if the task is an empty list
+    * @throws IOException
+    *    if an I/O error occurs
+    * @throws NullPointerException
+    *    <ul>
+    *       <li>if an element in task list is null, or</li>
+    *       <li>attempting to add null key environment variables, or</li> 
+    *       <li>if defining an output file with a null pathname</li>
+    *    </ul>
+    * @throws SecurityException if a security manager exists and
+    *    <ul>
+    *       <li>when attemping to start the process</li>
+    *       <ul>
+    *          <li>its checkExec method doesn't allow creation of the subprocess, or</li>
+    *          <li>the standard input to the subprocess was redirected from a file and the security manager's checkRead method denies read access to the file, or</li>
+    *          <li>the standard output or standard error of the subprocess was redirected to a file and the security manager's checkWrite method denies write access to the file, or</li>
+    *       </ul>
+    *       <li>when attemping to configure the environment variables</li>
+    *       <ul>
+    *          <li>its checkPermission method doesn't allow access to the process environment</li>
+    *       </ul>
+    *    </ul>
+    * @throws UnsupportedOperationException
+    *    <ol>
+    *       <li>if the operating system does not support the creation of processes, or</li>
+    *       <li>if configuring environment variables and the system does not allow such modifications</li>
+    *    </ol>
     */
    public static Map<String,String> exec( List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv ) { 
 
@@ -159,7 +307,7 @@ public final class Exec {
    }
 
 
-   /**
+   /*
     * Executes the task as a native command line process and returns a Map result, throwing exceptions if they occur.
     * <p>
     * This method provides a convenience wrapper around Java's ProcessBuilder and Process for simplifying configuration through convention, handling access to and buffering process outputs, and promptly writing to the input stream and reading from the output stream to prevent process block or deadlock.
@@ -170,35 +318,32 @@ public final class Exec {
     * <ul>
     *    <li>trim - "true" to trim standard output and error output when not written to a file and "false" otherwise"; defaults to "true"</li>
     *    <li>directory - the working directory in which the task should execute; defaults to the current directory from which the program is executed</li>
-    *    <li>redirectErrToOut - "true" to redirect the standard error to standard output; otherwise and default is not to redirect standard error</li>
-    *
-    *    todo:
-    *    <li>redirectOutFilePath - file path and name</li>
-    *    <li>redirectOutType - overwrite, append</li>
-    *    <li>redirectErrFilePath - file path and name</li>
-    *    <li>redirectErrType - overwrite, append</li>
-    *
+    *    <li>redirectErrToOut - "true" to redirect the standard error to standard output; otherwise and default is not to redirect standard error; cannot be used in combination with 'redirectErrToFile' otherwise an exception will be thrown</li>
+    *    <li>redirectOutFilePath - redirect standard output by providing a file path and name of the output file; must also define 'redirectOutType' otherwise an exception is thrown</li>
+    *    <li>redirectOutType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents</li>
+    *    <li>redirectErrFilePath - redirect standard error by providing a file path and name of the error file; must also define 'redirectErrType' otherwise an exception is thrown; cannot use in conjection with 'redirectErrToFile' otherwise an error is thrown</li>
+    *    <li>redirectErrType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents</li>
     * </ul>
     * <p>
     * The optional addEnv (which may be null or empty) defines environment variables as key-value pairs to add when executing the task.
     * <p>
     * The optional removeEnv (which may be null or empty) defines environment variables as a list to remove when executing the task.
     * <p>
-    * Returns a Map with key-value pairs:
+    * Returns a Map with key-value pairs, unless an exception is thrown:
     * <ul>
     *    <li>exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>
-    *    <li>out - the output returned by the process as a String, which could be an empty String; only defined if the output wasn't redirected to a file</li>
-    *    <li>err - contains the error output returned by the process as a String; only defined if an an error occurred, e.g. exitValue is non-zero, and standard error wasn't merged with standard output and standard error wasn't redirected to a file</li>
+    *    <li>out - the output returned by the process as a String, which could be an empty String; defined unless the output was redirected to a file</li>
+    *    <li>err - contains the error output returned by the process as a String; defined unless an an error occurred (e.g. exitValue is non-zero), standard error wasn't merged with standard output, and standard error wasn't redirected to a file</li>
     * </ul>
     *
     * @param task
     *    the task to execute as a String List, where the first item is the command and any subsequent items are arguments
     * @param config
-    *    a Map of key-value pairs defining the configuration; optional, can be null
+    *    a Map of key-value pairs defining the configuration; optional, can be empty or null
     * @param addEnv
-    *    a Map of key-value of environment variables to add; optional, can be null
+    *    a Map of key-value of environment variables to add; optional, can be empty or null
     * @param removeEnv
-    *    a List of environment variables to remove; optional, can be null
+    *    a List of environment variables to remove; optional, can be empty or null
     * @return a Map of the result of the command execution
     * @throws IllegalArgumentException
     *    <ul>
