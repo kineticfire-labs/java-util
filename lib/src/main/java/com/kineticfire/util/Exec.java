@@ -16,6 +16,10 @@
 package com.kineticfire.util;
 
 
+
+import com.kineticfire.util.TaskExecutionException;
+
+
 import java.lang.ProcessBuilder.Redirect;
 import java.util.List;
 import java.util.Arrays;
@@ -28,10 +32,7 @@ import java.io.File;
 import java.io.IOException;
 
 
-//todo remove references to Groovy's String
 //todo update class docs
-
-
 /**
  * Provides command line execution utilities.
  * <p>
@@ -55,26 +56,23 @@ public final class Exec {
 
     //todo if redirecting output to a file, then returns empty string regardless of what was captured on standard output and output to a file
     //todo if method throws exception on any error, then can't redirect err to to out or redirect err to file.  because then couldn't see err to throw exception.
-    //todo what error is thrown if the task itself errs... TaskExecutionException?
+    //todo if command line task errs... throw TaskExecutionException
    
    /**
-    * Executes the task as a native command line process and returns as a String a successful result, throwing exceptions on any task execution failure.
+    * Executes a task as a native command line process and returns the output as a String on success, throwing exceptions on any task execution failure.
     * <p>
     * This method provides a convenience wrapper around Java's ProcessBuilder and Process for simplifying configuration through convention, handling access to and buffering process outputs, and promptly writing to the input stream and reading from the output stream to prevent process block or deadlock.
     * <p>
-    * This method is equivalent to 'exec(...)', except that method always returns a Map&lt;String,String&gt; result and never throws an exception while this method returns a String if succesful and otherwise throws an exception on any failure.  This method is applicable to cases for executing a command and receiving a String result (without checking for success or presence of the key in the map) and responding to any error in try-catch blocks; or allowing the error to be thrown, which can be useful in test setups.
+    * This method is equivalent to 'exec(...)', except that method always returns a Map&lt;String,String&gt; result and never throws an exception while this method returns the output of the task as a String if succesful and otherwise throws an exception on any failure.  A limitation of this method is that standard error cannot be redirected--to standard out or to a file--as with 'exec(...)' because task errors need to be observed by this method in order to throw the exception.  Information from standard error is available in the thrown exception.
     * <p>
-    * The first item in the task list is treated as the command and any additional items are treated as parameters.
+    * The first item in the task list is treated as the command and any additional items are treated as parameters.  Required.
     * <p>
     * The optional config (which may be null or empty) defines configuration as key-value pairs as follows:
     * <ul>
-    *    <li>trim - "true" to trim standard output and error output when not written to a file and "false" otherwise"; defaults to "true"</li>
-    *    <li>directory - the working directory in which the task should execute; defaults to the current directory from which the program is executed</li>
-    *    <li>redirectErrToOut - "true" to redirect the standard error to standard output; otherwise and default is not to redirect standard error; cannot be used in combination with 'redirectErrToFile' otherwise an exception will be thrown</li>
-    *    <li>redirectOutFilePath - redirect standard output by providing a file path and name of the output file; must also define 'redirectOutType' otherwise an exception is thrown</li>
-    *    <li>redirectOutType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents</li>
-    *    <li>redirectErrFilePath - redirect standard error by providing a file path and name of the error file; must also define 'redirectErrType' otherwise an exception is thrown; cannot use in conjection with 'redirectErrToFile' otherwise an error is thrown</li>
-    *    <li>redirectErrType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents</li>
+    *    <li>trim - "true" to trim standard output and error output and "false" otherwise"; optional, defaults to "true"</li>
+    *    <li>directory - the working directory in which the task should execute; optional, defaults to the current directory from which the program is executed</li>
+    *    <li>redirectOutFilePath - redirect standard output by providing a file path and name of the output file; must also define 'redirectOutType' otherwise an exception is thrown; optional, defaults to returning standard output as  String in Map key 'out'</li>
+    *    <li>redirectOutType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents; required if defining 'redirectOutFilePath', otherwise defining will throw an exception</li>
     * </ul>
     * <p>
     * The optional addEnv (which may be null or empty) defines environment variables as key-value pairs to add when executing the task.
@@ -84,7 +82,7 @@ public final class Exec {
     * Returns a String result of the task execution on success, and throws an exception on any error.
     *
     * @param task
-    *    the task to execute as a String List, where the first item is the command and any subsequent items are arguments
+    *    the task to execute as a String List, where the first item is the command and any subsequent items are arguments; required
     * @param config
     *    a Map of key-value pairs defining the configuration; optional, can be empty or null
     * @param addEnv
@@ -101,6 +99,8 @@ public final class Exec {
     *    if the task is an empty list
     * @throws IOException
     *    if an I/O error occurs
+    * @throws TaskExecutionException
+    *    if the task run as a command line process failed, e.g. it returned a non-zero exit value
     * @throws NullPointerException
     *    <ul>
     *       <li>if an element in task list is null, or</li>
@@ -111,9 +111,7 @@ public final class Exec {
     *    <ul>
     *       <li>when attemping to start the process</li>
     *       <ul>
-    *          <li>its checkExec method doesn't allow creation of the subprocess, or</li>
-    *          <li>the standard input to the subprocess was redirected from a file and the security manager's checkRead method denies read access to the file, or</li>
-    *          <li>the standard output or standard error of the subprocess was redirected to a file and the security manager's checkWrite method denies write access to the file, or</li>
+    *          <li>its checkExec method doesn't allow creation of the subprocess</li>
     *       </ul>
     *       <li>when attemping to configure the environment variables</li>
     *       <ul>
@@ -126,38 +124,82 @@ public final class Exec {
     *       <li>if configuring environment variables and the system does not allow such modifications</li>
     *    </ol>
     */
-   public static String execWithException( List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv ) throws IOException { 
+   public static String execWithException( List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv ) 
+           throws IOException, TaskExecutionException {
 
-      String out = ""; // return empty string (unless exception thrown)
+      String out = ""; // return empty string, unless 'out' has data or an is exception thrown
+
+      // make a copy of the 'config' Map, then from the new Map (so don't modify the input Map) remove if present mappings to affect standard error
+      Map<String,String> checkedConfig = new HashMap<String,String>( config );
+      checkedConfig.remove( "redirectErrToOut" );
+      checkedConfig.remove( "redirectErrFilePath" );
+      checkedConfig.remove( "redirectErrType" );
+
+      // if 'redirectErrToOut' defined and set to anything but 'false', then throw exception
+      if ( config.get( "redirectErrToOut" ) != null && !config.get( "redirectErrToOut" ).equals( "false" ) ) {
+          throw new IllegalArgumentException( "Illegal configuration in 'config'.  Either do not define 'redirectErrToOut' or set to 'false'." );
+      }
+
+      // if 'redirectErrFilePath' defined and not set to null, then throw exception
+      if ( config.get( "redirectErrFilePath" ) != null ) {
+          throw new IllegalArgumentException( "Illegal configuration in 'config'.  Cannot define 'redirectErrFilePath'." );
+      }
+
+      // if 'redirectErrType' defined and not set to null, then throw exception
+      if ( config.get( "redirectErrType" ) != null ) {
+          throw new IllegalArgumentException( "Illegal configuration in 'config'.  Cannot define 'redirectErrType'." );
+      }
+
 
       Map<String,String> resultMap = execImpl( task, config, addEnv, removeEnv );
             /* return is as below, or an exception is thrown:
              *    - exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error
-             *    - out       - the output returned by the process as a String, which could be an empty String; only present if the output wasn't redirected to a file
-             *    - err       - contains the error output returned by the process as a String; only present if an an error occurred, e.g. exitValue is non-zero, and standard error wasn't merged with standard output and standard error wasn't redirected to a file
+             *    - out       - the output returned by the process as a String, which could be an empty String; always present in this case since output not redirected to a file
+             *    - err       - contains the error output returned by the process as a String; only present if an an error occurred, e.g. exitValue is non-zero; in this case, can't merge standard error with standard output, and can't redirect standard error to a file
              */
 
 
       if ( resultMap.get( "exitValue" ).equals( "0" ) ) {
 
-         // key 'out' may not be defined, even for exitValue=0, if output redirected to file
-         if ( resultMap.containsKey( "out" ) && resultMap.get( "out" ) != null ) {
-            out = resultMap.get( "out" );
-         }
+         // key 'out' always defined in this case, since output cannot be redirected to a file; 'out' may be empty String
+         out = resultMap.get( "out" );
 
       } else { 
-          
-         StringBuffer sb = new StringBuffer( );
 
-         sb.append( "Executing command '" + task + "' failed with exit value '" + resultMap.get( "exitValue" ) + "." );
+         int exitValue;
 
-         // key 'err' may not be defined, even in error condition, if error redirected
-         if ( resultMap.containsKey( "err" ) && resultMap.get( "err" ) != ( null ) && !resultMap.get( "err" ).equals( "" ) ) {
-            sb.append( "  " + resultMap.get( "err" ) );
+         try {
+             // 'exitValue' always defined
+             exitValue = Integer.parseInt( resultMap.get( "exitValue" ) );
+         } catch ( NumberFormatException ignore ) {
+             exitValue = -1;
          }
 
-         throw new IOException( sb.toString( ) );
-         //todo throw a TaskExecutionException??
+
+         StringBuffer messageSb = new StringBuffer( );
+         StringBuffer taskSb = new StringBuffer( );
+
+         taskSb.append( "[" );
+
+         // 'task' can't be null, otherwise Process would have thrown NullPointerException
+         for ( String item : task ) {
+             taskSb.append( item + "," );
+         }
+
+         taskSb.deleteCharAt( taskSb.length( ) - 1 ); // remove dangling ','
+
+         taskSb.append( "]" );
+
+
+         messageSb.append( "Executing task '" + taskSb.toString( ) + "' failed with exit value '" + exitValue + "." );
+
+         // key 'err' always defined in this case, since error cannot be redirected; 'err' may be empty String
+         if ( !resultMap.get( "err" ).equals( "" ) ) {
+            messageSb.append( "  " + resultMap.get( "err" ) );
+         }
+
+        throw( new TaskExecutionException( messageSb.toString( ), exitValue ) );
+          
       }
 
 
@@ -178,23 +220,23 @@ public final class Exec {
 
 
    /**
-    * Executes the task as a native command line process and returns a Map result, without throwing exceptions.
+    * Executes a task as a native command line process and returns a Map result, without throwing exceptions.
     * <p>
     * This method provides a convenience wrapper around Java's ProcessBuilder and Process for simplifying configuration through convention, handling access to and buffering process outputs, and promptly writing to the input stream and reading from the output stream to prevent process block or deadlock.
     * <p>
     * This method is equivalent to 'execWithException(...)', except that method returns a String if successful otherwise throws an exception on any error while this method returns a Map&lt;String,String&gt;result and does not throw exceptions.
     * <p>
-    * The first item in the task list is treated as the command and any additional items are treated as parameters.
+    * The first item in the task list is treated as the command and any additional items are treated as parameters.  Required.
     * <p>
     * The optional config (which may be null or empty) defines configuration as key-value pairs as follows:
     * <ul>
-    *    <li>trim - "true" to trim standard output and error output when not written to a file and "false" otherwise"; defaults to "true"</li>
-    *    <li>directory - the working directory in which the task should execute; defaults to the current directory from which the program is executed</li>
-    *    <li>redirectErrToOut - "true" to redirect the standard error to standard output; otherwise and default is not to redirect standard error; cannot be used in combination with 'redirectErrToFile' otherwise an exception will be thrown</li>
-    *    <li>redirectOutFilePath - redirect standard output by providing a file path and name of the output file; must also define 'redirectOutType' otherwise an exception is thrown</li>
-    *    <li>redirectOutType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents</li>
-    *    <li>redirectErrFilePath - redirect standard error by providing a file path and name of the error file; must also define 'redirectErrType' otherwise an exception is thrown; cannot use in conjection with 'redirectErrToFile' otherwise an error is thrown</li>
-    *    <li>redirectErrType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents</li>
+    *    <li>trim - "true" to trim standard output and error output when not written to a file and "false" otherwise"; optional, defaults to "true"</li>
+    *    <li>directory - the working directory in which the task should execute; optional, defaults to the current directory from which the program is executed</li>
+    *    <li>redirectErrToOut - "true" to redirect the standard error to standard output; optional, default is not to redirect standard error; cannot be used in combination with 'redirectErrToFile' otherwise an exception will be thrown</li>
+    *    <li>redirectOutFilePath - redirect standard output by providing a file path and name of the output file; must also define 'redirectOutType' otherwise an exception is thrown; optional, defaults to returning standard output as  String in Map key 'out'</li>
+    *    <li>redirectOutType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents; required if defining 'redirectOutFilePath', otherwise defining will throw an exception</li>
+    *    <li>redirectErrFilePath - redirect standard error by providing a file path and name of the error file; must also define 'redirectErrType' otherwise an exception is thrown; cannot use in conjection with 'redirectErrToFile' otherwise an error is thrown; optional, defaults to return standard error in Map key 'err'</li>
+    *    <li>redirectErrType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents; required if defining 'redirectErrFilePath', otherwise defining will throw an exception</li>
     * </ul>
     * <p>
     * The optional addEnv (which may be null or empty) defines environment variables as key-value pairs to add when executing the task.
@@ -209,7 +251,7 @@ public final class Exec {
     * </ul>
     *
     * @param task
-    *    the task to execute as a String List, where the first item is the command and any subsequent items are arguments
+    *    the task to execute as a String List, where the first item is the command and any subsequent items are arguments; required
     * @param config
     *    a Map of key-value pairs defining the configuration; optional, can be empty or null
     * @param addEnv
@@ -309,21 +351,21 @@ public final class Exec {
 
 
    /*
-    * Executes the task as a native command line process and returns a Map result, throwing exceptions if they occur.
+    * Executes a task as a native command line process and returns a Map result, throwing exceptions if they occur.
     * <p>
     * This method provides a convenience wrapper around Java's ProcessBuilder and Process for simplifying configuration through convention, handling access to and buffering process outputs, and promptly writing to the input stream and reading from the output stream to prevent process block or deadlock.
     * <p>
-    * The first item in the task list is treated as the command and any additional items are treated as parameters.
+    * The first item in the task list is treated as the command and any additional items are treated as parameters.  The task is required.
     * <p>
     * The optional config (which may be null or empty) defines configuration as key-value pairs as follows:
     * <ul>
-    *    <li>trim - "true" to trim standard output and error output when not written to a file and "false" otherwise"; defaults to "true"</li>
-    *    <li>directory - the working directory in which the task should execute; defaults to the current directory from which the program is executed</li>
-    *    <li>redirectErrToOut - "true" to redirect the standard error to standard output; otherwise and default is not to redirect standard error; cannot be used in combination with 'redirectErrToFile' otherwise an exception will be thrown</li>
-    *    <li>redirectOutFilePath - redirect standard output by providing a file path and name of the output file; must also define 'redirectOutType' otherwise an exception is thrown</li>
-    *    <li>redirectOutType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents</li>
-    *    <li>redirectErrFilePath - redirect standard error by providing a file path and name of the error file; must also define 'redirectErrType' otherwise an exception is thrown; cannot use in conjection with 'redirectErrToFile' otherwise an error is thrown</li>
-    *    <li>redirectErrType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents</li>
+    *    <li>trim - "true" to trim standard output and error output when not written to a file and "false" otherwise"; optional, defaults to "true"</li>
+    *    <li>directory - the working directory in which the task should execute; optional, defaults to the current directory from which the program is executed</li>
+    *    <li>redirectErrToOut - "true" to redirect the standard error to standard output; optional, default is not to redirect standard error; cannot be used in combination with 'redirectErrToFile' otherwise an exception will be thrown</li>
+    *    <li>redirectOutFilePath - redirect standard output by providing a file path and name of the output file; must also define 'redirectOutType' otherwise an exception is thrown; optional, defaults to returning standard output as  String in Map key 'out'</li>
+    *    <li>redirectOutType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents; required if defining 'redirectOutFilePath', otherwise defining will throw an exception</li>
+    *    <li>redirectErrFilePath - redirect standard error by providing a file path and name of the error file; must also define 'redirectErrType' otherwise an exception is thrown; cannot use in conjection with 'redirectErrToFile' otherwise an error is thrown; optional, defaults to return standard error in Map key 'err'</li>
+    *    <li>redirectErrType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents; required if defining 'redirectErrFilePath', otherwise defining will throw an exception</li>
     * </ul>
     * <p>
     * The optional addEnv (which may be null or empty) defines environment variables as key-value pairs to add when executing the task.
@@ -338,7 +380,7 @@ public final class Exec {
     * </ul>
     *
     * @param task
-    *    the task to execute as a String List, where the first item is the command and any subsequent items are arguments
+    *    the task to execute as a String List, where the first item is the command and any subsequent items are arguments; required
     * @param config
     *    a Map of key-value pairs defining the configuration; optional, can be empty or null
     * @param addEnv
@@ -380,7 +422,8 @@ public final class Exec {
     *       <li>if configuring environment variables and the system does not allow such modifications</li>
     *    </ol>
     */
-   private static Map<String,String> execImpl( List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv ) throws IOException { 
+   private static Map<String,String> execImpl( List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv )
+        throws IOException { 
 
       Map<String,String> resultMap = new HashMap<String,String>( );
 
@@ -407,6 +450,7 @@ public final class Exec {
          }
 
          // if specified, then configure working directory for running the task
+            // let Process throw exception if directory doesn't exist, pemissions issue,etc.
          if ( config.get( "directory" ) != null ) {
             processBuilder.directory( new File( config.get( "directory" ) ) );
          }

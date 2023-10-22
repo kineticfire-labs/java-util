@@ -44,27 +44,33 @@ class ExecUtilsTest extends Specification {
 
 
 
-
-    // ********************************************************
-    // ********************************************************
-    // ********************************************************
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // exec(List)
-    // ********************************************************
-    // ********************************************************
-    // ********************************************************
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 
 
-    // ********************************************************
-    // ********************************************************
-    // ********************************************************
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // exec(List,Map,Map,List)
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
     // ********************************************************
-    // ********************************************************
+    // exec
+    //      - task, x, x, x
     // ********************************************************
 
     /* todo- convert from execImpl
+
     def "exec(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) for valid task without CL arguments returns exitValue of 0"( ) {
 
         given: "command without arguments to execute to get the current username"
@@ -965,27 +971,34 @@ class ExecUtilsTest extends Specification {
     */
 
 
-    // ********************************************************
-    // ********************************************************
-    // ********************************************************
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // execWithException(List)
-    // ********************************************************
-    // ********************************************************
-    // ********************************************************
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 
 
 
-    // ********************************************************
-    // ********************************************************
-    // ********************************************************
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // execWithException(List,Map,Map,List)
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
     // ********************************************************
-    // ********************************************************
+    // execWithException
+    //      - task, x, x, x
     // ********************************************************
 
     /* todo- convert from execImpl
+
     def "execWithException(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) for valid task without CL arguments returns exitValue of 0"( ) {
 
         given: "command without arguments to execute to get the current username"
@@ -1068,7 +1081,7 @@ class ExecUtilsTest extends Specification {
 
 
     // ********************************************************
-    // execImpl
+    // execWithException
     //      - x, config, x, x
     //           (empty)
     // ********************************************************
@@ -1095,7 +1108,7 @@ class ExecUtilsTest extends Specification {
 
 
     // ********************************************************
-    // execImpl
+    // execWithException
     //      - x, config, x, x
     //           - trim
     // ********************************************************
@@ -1158,7 +1171,7 @@ class ExecUtilsTest extends Specification {
 
 
     // ********************************************************
-    // execImpl
+    // execWithException
     //      - x, config, x, x
     //           - directory
     // ********************************************************
@@ -1190,112 +1203,7 @@ class ExecUtilsTest extends Specification {
     }
 
     // ********************************************************
-    // execImpl
-    //      - x, config, x, x
-    //           - redirectErrToOut (to returned string, not file)
-    // ********************************************************
-
-    def "execWithException(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) when redirecting error to output (returned string, not file) for valid task returns with no error output property"( ) {
-
-        given: "valid command to run"
-        List<String> task = Arrays.asList( 'id', '-un' )
-        Map<String,String> cfg = new HashMap<String,String>( )
-        cfg.put( 'redirectErrToOut', 'true' )
-
-        when: "execute the command"
-        String result = Exec.execWithException( task, null, null, null )
-
-        then: "map key 'exitValue' is '0'"
-        resultMap.exitValue.equals( '0' )
-
-        and: "returns the correct username from executing the command in map key 'out'"
-        String usernameExpected = System.properties[ 'user.name' ]
-        usernameExpected.equals( resultMap.out )
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
-    }
-
-    def "execWithException(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) when redirecting error to output (returned string, not file) for invalid task returns error output in standard output"( ) {
-
-        given: "invalid command to run"
-        List<String> task = Arrays.asList( 'id', '-i' )
-        Map<String,String> cfg = new HashMap<String,String>( )
-        cfg.put( 'redirectErrToOut', 'true' )
-
-        when: "execute the command"
-        Map<String,String> resultMap = Exec.execImpl( task, cfg, null, null )
-        String result = Exec.execWithException( task, null, null, null )
-
-        then: "map key 'exitValue' is '1'"
-        resultMap.exitValue.equals( '1' )
-
-        and: "map key 'out' contains 'invalid option'"
-        resultMap.out.contains( 'invalid option' )
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
-    }
-
-    def "execWithException(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) when explicitly not redirecting error to output (returned string, not file) (redirectErrToOut=false) for valid task returns with no error output property"( ) {
-
-        given: "valid command to run"
-        List<String> task = Arrays.asList( 'id', '-un' )
-        Map<String,String> cfg = new HashMap<String,String>( )
-        cfg.put( 'redirectErrToOut', 'false' )
-
-        when: "execute the command"
-        Map<String,String> resultMap = Exec.execImpl( task, cfg, null, null )
-        String result = Exec.execWithException( task, null, null, null )
-
-        then: "map key 'exitValue' is '0'"
-        resultMap.exitValue.equals( '0' )
-
-        and: "returns the correct username from executing the command in map key 'out'"
-        String usernameExpected = System.properties[ 'user.name' ]
-        usernameExpected.equals( resultMap.out )
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
-    }
-
-    def "execWithException(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) when explicitly not redirecting error to output (returned string, not file) (redirectErrToOut=false) for invalid task returns error output property"( ) {
-
-        given: "invalid command to run"
-        List<String> task = Arrays.asList( 'id', '-i' )
-        Map<String,String> cfg = new HashMap<String,String>( )
-        cfg.put( 'redirectErrToOut', 'false' )
-
-        when: "execute the command"
-        String result = Exec.execWithException( task, null, null, null )
-
-        then: "map key 'exitValue' is '1'"
-        resultMap.exitValue.equals( '1' )
-
-        and: "map key 'out' is empty string"
-        resultMap.out.equals( '' )
-
-        and: "map key 'err' contains 'invalid option'"
-        resultMap.err.contains( 'invalid option' )
-    }
-
-    def "execWithException(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) when given an illegal value for redirectErrToOut throws an exception"( ) {
-
-        given: "valid command to run, with invalid 'redirectErrToOut' value"
-        List<String> task = Arrays.asList( 'id', '-un' )
-        Map<String,String> cfg = new HashMap<String,String>( )
-        cfg.put( 'redirectErrToOut', 'illegal-value' )
-
-        when: "execute the command"
-        String result = Exec.execWithException( task, null, null, null )
-
-        then: "exception thrown"
-        thrown IllegalArgumentException
-    }
-
-
-    // ********************************************************
-    // execImpl
+    // execWithException
     //      - x, config, x, x
     //           - redirectOutFilePath
     //           - redirectOutType
@@ -1458,297 +1366,18 @@ class ExecUtilsTest extends Specification {
 
 
     // ********************************************************
-    // execImpl
+    // execWithException
     //      - x, config, x, x
-    //           - redirectErrToOut (to file, not to returned string)
-    // ********************************************************
-
-    def "execWithException(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) for valid task when redirecting error to out, and output to file"( ) {
-
-        given: "valid command to run"
-        List<String> task = Arrays.asList( 'id', '-un' )
-        Map<String,String> cfg = new HashMap<String,String>( )
-        String outFilePath = tempDir.toString( ) + File.separator + 'test.txt'
-        cfg.put( 'redirectOutFilePath', outFilePath )
-        cfg.put( 'redirectOutType', 'overwrite' )
-        cfg.put( 'redirectErrToOut', 'true' )
-
-        when: "execute the command"
-        String result = Exec.execWithException( task, null, null, null )
-
-        then: "map key 'exitValue' is '0'"
-        resultMap.exitValue.equals( '0' )
-
-        and: "output file has contents 'user'"
-        Files.readString( Path.of( outFilePath ) ).trim( ).equals( 'user' )
-
-        and: "map key 'out' is not present"
-        resultMap.containsKey( 'out' ) == false
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
-    }
-
-    def "execWithException(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) for invalid task when redirecting error to out, and output to file"( ) {
-
-        given: "valid command to run"
-        List<String> task = Arrays.asList( 'id', '-j' )
-        Map<String,String> cfg = new HashMap<String,String>( )
-        String outFilePath = tempDir.toString( ) + File.separator + 'test.txt'
-        cfg.put( 'redirectOutFilePath', outFilePath )
-        cfg.put( 'redirectOutType', 'overwrite' )
-        cfg.put( 'redirectErrToOut', 'true' )
-
-        when: "execute the command"
-        String result = Exec.execWithException( task, null, null, null )
-
-        then: "map key 'exitValue' is '1'"
-        resultMap.exitValue.equals( '1' )
-
-        and: "output file has error output"
-        Files.readString( Path.of( outFilePath ) ).trim( ).contains( 'invalid option' )
-
-        and: "map key 'out' is not present"
-        resultMap.containsKey( 'out' ) == false
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
-    }
-
-
-    // ********************************************************
-    // execImpl
-    //      - x, config, x, x
+    //           - redirectErrToOut
     //           - redirectErrFilePath
     //           - redirectErrType
     // ********************************************************
 
-    def "execWithException(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) for valid task when redirecting error to file"( ) {
-
-        given: "valid command to run"
-        List<String> task = Arrays.asList( 'id', '-un' )
-        Map<String,String> cfg = new HashMap<String,String>( )
-        String errFilePath = tempDir.toString( ) + File.separator + 'test.txt'
-        cfg.put( 'redirectErrFilePath', errFilePath )
-        cfg.put( 'redirectErrType', 'overwrite' )
-
-        when: "execute the command"
-        String result = Exec.execWithException( task, null, null, null )
-
-        then: "map key 'exitValue' is '0'"
-        resultMap.exitValue.equals( '0' )
-
-        and: "map key 'out' has contents 'user'"
-        resultMap.out.equals( 'user' )
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
-
-        and: "err file has no contents"
-        Files.readString( Path.of( errFilePath ) ).equals( '' )
-    }
-
-    def "execWithException(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) for invalid task when redirecting error to file"( ) {
-
-        given: "valid command to run"
-        List<String> task = Arrays.asList( 'id', '-j' )
-        Map<String,String> cfg = new HashMap<String,String>( )
-        String errFilePath = tempDir.toString( ) + File.separator + 'test.txt'
-        cfg.put( 'redirectErrFilePath', errFilePath )
-        cfg.put( 'redirectErrType', 'overwrite' )
-
-        when: "execute the command"
-        String result = Exec.execWithException( task, null, null, null )
-
-        then: "map key 'exitValue' is '1'"
-        resultMap.exitValue.equals( '1' )
-
-        and: "map key 'out' is empty string"
-        resultMap.out.equals( '' )
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
-
-        and: "err file has error output"
-        Files.readString( Path.of( errFilePath ) ).contains( 'invalid option' )
-    }
-
-    def "execWithException(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) overwrites existing file content when error redirected to file with option 'overwrite'"( ) {
-
-        given: "invalid command to run and existing file"
-        List<String> task = Arrays.asList( 'id', '-j' )
-        Map<String,String> cfg = new HashMap<String,String>( )
-        String errFilePath = tempDir.toString( ) + File.separator + 'test.txt'
-        cfg.put( 'redirectErrFilePath', errFilePath )
-        cfg.put( 'redirectErrType', 'overwrite' )
-
-        String originalContent = "original content"
-
-        Files.write( Path.of( errFilePath ), originalContent.getBytes( ) )
-
-        when: "execute the command"
-        String result = Exec.execWithException( task, null, null, null )
-
-        then: "map key 'exitValue' is '1'"
-        resultMap.exitValue.equals( '1' )
-
-        and: "map key 'out' is empty string"
-        resultMap.out.equals( '' )
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
-
-        and: "err file has error output"
-        Files.readString( Path.of( errFilePath ) ).trim( ).contains( 'invalid option' )
-    }
-
-    def "execWithException(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) appends to existing file when error redirected to file with option 'append'"( ) {
-
-        given: "valid command to run and existing file"
-        List<String> task = Arrays.asList( 'id', '-j' )
-        Map<String,String> cfg = new HashMap<String,String>( )
-        String errFilePath = tempDir.toString( ) + File.separator + 'test.txt'
-        cfg.put( 'redirectErrFilePath', errFilePath )
-        cfg.put( 'redirectErrType', 'append' )
-
-        String originalContent = "original content"
-
-        Files.write( Path.of( errFilePath ), originalContent.getBytes( ) )
-
-        when: "execute the command"
-        String result = Exec.execWithException( task, null, null, null )
-
-        then: "map key 'exitValue' is '1'"
-        resultMap.exitValue.equals( '1' )
-
-        and: "map key 'out' is empty string"
-        resultMap.out.equals( '' )
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
-
-        and: "map key 'err' has original contents plus error output"
-        Files.readString( Path.of( errFilePath ) ).trim( ).contains( originalContent + 'id: invalid option' )
-    }
-
-    def "execWithException(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) throws error when given redirectErrFilePath but no redirectErrType"( ) {
-
-        given: "valid command to run"
-        List<String> task = Arrays.asList( 'id', '-un' )
-        Map<String,String> cfg = new HashMap<String,String>( )
-        String errFilePath = tempDir.toString( ) + File.separator + 'test.txt'
-        cfg.put( 'redirectErrFilePath', errFilePath )
-
-        when: "execute the command"
-        String result = Exec.execWithException( task, null, null, null )
-
-        then: "exception thrown"
-        thrown IllegalArgumentException
-    }
-
-    def "execWithException(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) throws error when given redirectErrType but no redirectErrFilePath"( ) {
-
-        given: "valid command to run"
-        List<String> task = Arrays.asList( 'id', '-un' )
-        Map<String,String> cfg = new HashMap<String,String>( )
-        String errFilePath = tempDir.toString( ) + File.separator + 'test.txt'
-        cfg.put( 'redirectErrFilePath', errFilePath )
-
-        when: "execute the command"
-        String result = Exec.execWithException( task, null, null, null )
-
-        then: "exception thrown"
-        thrown IllegalArgumentException
-    }
-
-    def "execWithException(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) throws error when given illegal redirectOutType value"( ) {
-
-        given: "valid command to run"
-        List<String> task = Arrays.asList( 'id', '-un' )
-        Map<String,String> cfg = new HashMap<String,String>( )
-        String errFilePath = tempDir.toString( ) + File.separator + 'test.txt'
-        cfg.put( 'redirectErrFilePath', errFilePath )
-        cfg.put( 'redirectErrType', 'illegal-value' )
-
-        when: "execute the command"
-        String result = Exec.execWithException( task, null, null, null )
-
-        then: "exception thrown"
-        thrown IllegalArgumentException
-    }
+    // test that can't do these things... throw exception?
 
 
     // ********************************************************
-    // execImpl
-    //      - x, config, x, x
-    //           - both output and error to separate files
-    // ********************************************************
-
-    def "execWithException(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) for valid task when redirecting both output and error to file"( ) {
-
-        given: "valid command to run"
-        List<String> task = Arrays.asList( 'id', '-un' )
-        Map<String,String> cfg = new HashMap<String,String>( )
-        String outFilePath = tempDir.toString( ) + File.separator + 'testOut.txt'
-        String errFilePath = tempDir.toString( ) + File.separator + 'testErr.txt'
-        cfg.put( 'redirectOutFilePath', outFilePath )
-        cfg.put( 'redirectOutType', 'overwrite' )
-        cfg.put( 'redirectErrFilePath', errFilePath )
-        cfg.put( 'redirectErrType', 'overwrite' )
-
-        when: "execute the command"
-        String result = Exec.execWithException( task, null, null, null )
-
-        then: "map key 'exitValue' is '0'"
-        resultMap.exitValue.equals( '0' )
-
-        and: "out file has contents 'user'"
-        Files.readString( Path.of( outFilePath ) ).trim( ).equals( 'user' )
-
-        and: "map key 'out' is not present"
-        resultMap.containsKey( 'out' ) == false
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
-
-        and: "err file has no contents"
-        Files.readString( Path.of( errFilePath ) ).equals( '' )
-    }
-
-    def "execWithException(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) for invalid task when redirecting both output and error to file"( ) {
-
-        given: "valid command to run"
-        List<String> task = Arrays.asList( 'id', '-j' )
-        Map<String,String> cfg = new HashMap<String,String>( )
-        String outFilePath = tempDir.toString( ) + File.separator + 'testOut.txt'
-        String errFilePath = tempDir.toString( ) + File.separator + 'testErr.txt'
-        cfg.put( 'redirectOutFilePath', outFilePath )
-        cfg.put( 'redirectOutType', 'overwrite' )
-        cfg.put( 'redirectErrFilePath', errFilePath )
-        cfg.put( 'redirectErrType', 'overwrite' )
-
-        when: "execute the command"
-        String result = Exec.execWithException( task, null, null, null )
-
-        then: "map key 'exitValue' is '1'"
-        resultMap.exitValue.equals( '1' )
-
-        and: "out file has no contents"
-        Files.readString( Path.of( outFilePath ) ).equals( '' )
-
-        and: "map key 'out' is not present"
-        resultMap.containsKey( 'out' ) == false
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
-
-        and: "err file has error output"
-        Files.readString( Path.of( errFilePath ) ).contains( 'invalid option' )
-    }
-
-
-    // ********************************************************
-    // execImpl
+    // execWithException
     //      - x, x, addEnv x
     // ********************************************************
 
@@ -1816,7 +1445,7 @@ class ExecUtilsTest extends Specification {
 
 
     // ********************************************************
-    // execImpl
+    // execWithException
     //      - x, x, x, removeEnv
     // ********************************************************
 
@@ -1889,13 +1518,13 @@ class ExecUtilsTest extends Specification {
     */
 
 
-    // ********************************************************
-    // ********************************************************
-    // ********************************************************
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // execImpl
-    // ********************************************************
-    // ********************************************************
-    // ********************************************************
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     // ********************************************************
     // execImpl
