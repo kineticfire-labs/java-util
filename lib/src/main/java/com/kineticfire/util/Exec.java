@@ -145,7 +145,7 @@ public final class Exec {
             out = resultMap.get( "out" );
          }
 
-      } else if ( !resultMap.get( "exitValue" ).equals( "0" ) ) { 
+      } else { 
           
          StringBuffer sb = new StringBuffer( );
 
