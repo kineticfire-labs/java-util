@@ -54,10 +54,30 @@ import java.io.IOException;
 public final class Exec {
 
 
+   //todo document
+   public static Map<String,String> exec( List<String> task )
+        throws IOException { 
+
+        return( exec( task, null, null, null ) );
+
+   }
+
+
+   //todo document
+   public static Map<String,String> exec( List<String> task, Map<String,String> config )
+        throws IOException { 
+
+        return( exec( task, config, null, null ) );
+
+   }
+
+
    /**
-    * Executes a task as a native command line process and returns a Map result, throwing exceptions if they occur.
+    * Executes a task as a native command line process and returns a Map result, returning error output from the process, if any, or redirecting it to a file.
     * <p>
     * This method provides a convenience wrapper around Java's ProcessBuilder and Process for simplifying configuration through convention, handling access to and buffering process outputs, and promptly writing to the input stream and reading from the output stream to prevent process block or deadlock.
+    * <p>
+    * todo compare to execExceptionOnTaskFail
     * <p>
     * The first item in the task list is treated as the command and any additional items are treated as parameters.  The task is required.
     * <p>
@@ -65,9 +85,9 @@ public final class Exec {
     * <ul>
     *    <li>trim - "true" to trim standard output and error output when not written to a file and "false" otherwise"; optional, defaults to "true"</li>
     *    <li>directory - the working directory in which the task should execute; optional, defaults to the current directory from which the program is executed</li>
-    *    <li>redirectErrToOut - "true" to redirect the standard error to standard output; optional, default is not to redirect standard error; cannot be used in combination with 'redirectErrToFile' otherwise an exception will be thrown</li>
     *    <li>redirectOutFilePath - redirect standard output by providing a file path and name of the output file; must also define 'redirectOutType' otherwise an exception is thrown; optional, defaults to returning standard output as  String in Map key 'out'</li>
     *    <li>redirectOutType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents; required if defining 'redirectOutFilePath', otherwise defining will throw an exception</li>
+    *    <li>redirectErrToOut - "true" to redirect the standard error to standard output; optional, default is not to redirect standard error; cannot be used in combination with 'redirectErrToFile' otherwise an exception will be thrown</li>
     *    <li>redirectErrFilePath - redirect standard error by providing a file path and name of the error file; must also define 'redirectErrType' otherwise an exception is thrown; cannot use in conjection with 'redirectErrToFile' otherwise an error is thrown; optional, defaults to return standard error in Map key 'err'</li>
     *    <li>redirectErrType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents; required if defining 'redirectErrFilePath', otherwise defining will throw an exception</li>
     * </ul>
@@ -76,7 +96,7 @@ public final class Exec {
     * <p>
     * The optional removeEnv (which may be null or empty) defines environment variables as a list to remove when executing the task.
     * <p>
-    * Returns a Map with key-value pairs, unless an exception is thrown:
+    * Returns a Map (unless an exception is thrown) with key-value pairs:
     * <ul>
     *    <li>exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>
     *    <li>out - the output returned by the process as a String, which could be an empty String; defined unless the output was redirected to a file</li>
@@ -308,6 +328,22 @@ public final class Exec {
    }
 
 
+   //todo document
+   public static String execExceptionOnTaskFail( List<String> task ) 
+           throws IOException, TaskExecutionException {
+
+      return( execExceptionOnTaskFail( task, null, null, null ) );
+
+   }
+
+
+   //todo document
+   public static String execExceptionOnTaskFail( List<String> task, Map<String,String> config ) 
+           throws IOException, TaskExecutionException {
+      return( execExceptionOnTaskFail( task, config, null, null ) );
+   }
+
+
     //todo if redirecting output to a file, then returns empty string regardless of what was captured on standard output and output to a file
     //todo if method throws exception on any error, then can't redirect err to to out or redirect err to file.  because then couldn't see err to throw exception.
     //todo if command line task errs... throw TaskExecutionException
@@ -405,22 +441,25 @@ public final class Exec {
 
 
       Map<String,String> resultMap = exec( task, config, addEnv, removeEnv );
-            /* return is as below, or an exception is thrown:
-             *    - exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error
-             *    - out       - the output returned by the process as a String, which could be an empty String; defined unless output not redirected to a file
-             *    - err       - contains the error output returned by the process as a String; only present if an an error occurred, e.g. exitValue is non-zero; in this case, can't merge standard error with standard output, and can't redirect standard error to a file
+            /* return is as below (unless an exception was thrown):
+             *    - exitValue: the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error; always defined
+             *    - out: the output returned by the process as a String, which could be an empty String; defined unless the output was redirected to a file
+             *    - err: contains the error output returned by the process as a String; defined if an error occurred (e.g. exitValue is non-zero), standard error wasn't merged with standard output, and standard error wasn't redirected to a file
              */
 
 
+
+
+
+      // 'exitValue' always defined
       if ( resultMap.get( "exitValue" ).equals( "0" ) ) {
 
          if ( resultMap.get( "out" ) != null ) {
+            // 'out' defined, IF not redirected to a file
             out = resultMap.get( "out" );
          }
-         // else, will be empty string
 
-
-      } else { 
+      } else {
 
          int exitValue;
 
@@ -449,7 +488,7 @@ public final class Exec {
 
          messageSb.append( "Executing task '" + taskSb.toString( ) + "' failed with exit value '" + exitValue + "." );
 
-         // key 'err' always defined in this case, since error cannot be redirected; 'err' may be empty String
+         // key 'err' always defined in this case, since error cannot be redirected output or a file; 'err' may be empty String
          if ( !resultMap.get( "err" ).equals( "" ) ) {
             messageSb.append( "  " + resultMap.get( "err" ) );
          }
@@ -488,9 +527,9 @@ public final class Exec {
     * <ul>
     *    <li>trim - "true" to trim standard output and error output when not written to a file and "false" otherwise"; optional, defaults to "true"</li>
     *    <li>directory - the working directory in which the task should execute; optional, defaults to the current directory from which the program is executed</li>
-    *    <li>redirectErrToOut - "true" to redirect the standard error to standard output; optional, default is not to redirect standard error; cannot be used in combination with 'redirectErrToFile' otherwise an exception will be thrown</li>
     *    <li>redirectOutFilePath - redirect standard output by providing a file path and name of the output file; must also define 'redirectOutType' otherwise an exception is thrown; optional, defaults to returning standard output as  String in Map key 'out'</li>
     *    <li>redirectOutType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents; required if defining 'redirectOutFilePath', otherwise defining will throw an exception</li>
+    *    <li>redirectErrToOut - "true" to redirect the standard error to standard output; optional, default is not to redirect standard error; cannot be used in combination with 'redirectErrToFile' otherwise an exception will be thrown</li>
     *    <li>redirectErrFilePath - redirect standard error by providing a file path and name of the error file; must also define 'redirectErrType' otherwise an exception is thrown; cannot use in conjection with 'redirectErrToFile' otherwise an error is thrown; optional, defaults to return standard error in Map key 'err'</li>
     *    <li>redirectErrType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents; required if defining 'redirectErrFilePath', otherwise defining will throw an exception</li>
     * </ul>
@@ -551,16 +590,26 @@ public final class Exec {
     */
    public static Map<String,String> execExceptionless( List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv ) { 
 
+
+      /* todo
+       *
+       * Observe: seems nearly identical to 'exec' exception: no exception, and add 'success' 
+       *
+       * Issue: if error output redirected (file or standard output) and exception occurs, how to route that exception output?
+       *
+       */
+
+
       Map<String,String> resultMap = new HashMap<String,String>( );
       resultMap.put( "success", "false" );
 
       try {
 
          resultMap = exec( task, config, addEnv, removeEnv );
-            /* return is as below, or an exception is thrown:
-             *    - exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error
-             *    - out       - the output returned by the process as a String, which could be an empty String; only present if the output wasn't redirected to a file
-             *    - err       - contains the error output returned by the process as a String; only present if an an error occurred, e.g. exitValue is non-zero, and standard error wasn't merged with standard output and standard error wasn't redirected to a file
+            /* return is as below (unless an exception was thrown):
+             *    - exitValue: the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error; always defined
+             *    - out: the output returned by the process as a String, which could be an empty String; defined unless the output was redirected to a file
+             *    - err: contains the error output returned by the process as a String; defined if an error occurred (e.g. exitValue is non-zero), standard error wasn't merged with standard output, and standard error wasn't redirected to a file
              */
          
 
@@ -582,6 +631,14 @@ public final class Exec {
 
    /*
     * Returns an error message String for the given exception.
+    * <p>
+    * The returned error message consists of:
+    * <ul>
+    *    <li>Classname of the error message, e.g. 'NullPointerException'</li>
+    *    <li>If the exception contains a message, then ': &lt;message&gt;'</li>
+    *    <li>newline</li>
+    *    <li>If the exception contains a StackTrace, then a StackTrace</li>
+    * </ul>
     *
     * @param e
     *    exception
