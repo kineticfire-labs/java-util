@@ -63,9 +63,8 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
     }
 
 
-    /* todo- convert
 
-    def "execExceptionOnTaskFail(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) for valid task with one CL argument returns exitValue of 0"( ) {
+    def "execExceptionOnTaskFail(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) for valid task with one CL argument returns correct result"( ) {
 
         given: "command with arguments to execute to get the current username"
         List<String> task = Arrays.asList( 'id', '-un' )
@@ -73,18 +72,13 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
         when: "execute the command"
         String result = Exec.execExceptionOnTaskFail( task, null, null, null )
 
-        then: "map key 'exitValue' is '0'"
-        resultMap.exitValue.equals( '0' )
-
-        and: "returns the correct username from executing the command in map key 'out'"
+        then: "result contains correct username"
         String usernameExpected = System.properties[ 'user.name' ]
-        usernameExpected.equals( resultMap.out )
+        result.equals( usernameExpected );
 
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
     }
 
-    def "execExceptionOnTaskFail(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) for invalid task returns non-zero exitValue"( ) {
+    def "execExceptionOnTaskFail(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) for invalid task returns exception"( ) {
 
         given: "command to produce error"
         List<String> task = Arrays.asList( 'ls', '-j' )
@@ -92,14 +86,11 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
         when: "execute the command"
         String result = Exec.execExceptionOnTaskFail( task, null, null, null )
 
-        then: "map key 'exitValue' is '2'"
-        resultMap.exitValue.equals( '2' )
+        then: "thrown exception"
+        def e = thrown( TaskExecutionException )
 
-        and: "map key 'out' is empty string"
-        resultMap.out.equals( '' )
-
-        and: "map key 'err' contains 'invalid option'"
-        resultMap.err.contains( 'invalid option' )
+        and: "thrown exception contains error message"
+        e.message.contains( "invalid option" )
     }
 
     def "execExceptionOnTaskFail(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) throws exception for empty task"( ) {
@@ -140,17 +131,11 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
         Map<String,String> cfg = new HashMap<String,String>( )
 
         when: "execute the command"
-        String result = Exec.execExceptionOnTaskFail( task, null, null, null )
+        String result = Exec.execExceptionOnTaskFail( task, cfg, null, null )
 
-        then: "map key 'exitValue' is '0'"
-        resultMap.exitValue.equals( '0' )
-
-        and: "returns the correct username from executing the command in map key 'out'"
+        then: "returns the correct username from executing the command"
         String usernameExpected = System.properties[ 'user.name' ]
-        usernameExpected.equals( resultMap.out )
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
+        usernameExpected.equals( result )
     }
 
 
@@ -168,17 +153,11 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
         cfg.put( 'trim', 'true' )
 
         when: "execute the command"
-        String result = Exec.execExceptionOnTaskFail( task, null, null, null )
+        String result = Exec.execExceptionOnTaskFail( task, cfg, null, null )
 
-        then: "map key 'exitValue' is '0'"
-        resultMap.exitValue.equals( '0' )
-
-        and: "returns the correct username from executing the command in map key 'out', with output trimmed"
+        then: "returns the correct username from executing the command, with output trimmed"
         String usernameExpected = System.properties[ 'user.name' ]
-        usernameExpected.equals( resultMap.out )
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
+        usernameExpected.equals( result )
     }
 
     def "execExceptionOnTaskFail(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) returns untrimmed output when trim=false"( ) {
@@ -189,17 +168,12 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
         cfg.put( 'trim', 'false' )
 
         when: "execute the command"
-        String result = Exec.execExceptionOnTaskFail( task, null, null, null )
+        String result = Exec.execExceptionOnTaskFail( task, cfg, null, null )
 
-        then: "map key 'exitValue' is '0'"
-        resultMap.exitValue.equals( '0' )
+        then: "returns the correct username from executing the command, with output untrimmed"
+        String usernameExpected = System.properties[ 'user.name' ] + System.lineSeparator( );
+        usernameExpected.equals( result )
 
-        and: "returns the correct username from executing the command in map key 'out', with output untrimmed"
-        String usernameExpected = System.properties[ 'user.name' ] + '\n';
-        usernameExpected.equals( resultMap.out )
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
     }
 
     def "execExceptionOnTaskFail(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) throws exception for invalid trim value"( ) {
@@ -210,7 +184,7 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
         cfg.put( 'trim', 'illegal-value' )
 
         when: "execute the command"
-        String result = Exec.execExceptionOnTaskFail( task, null, null, null )
+        String result = Exec.execExceptionOnTaskFail( task, cfg, null, null )
 
         then: "thrown exception"
         thrown IllegalArgumentException
@@ -223,31 +197,24 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
     //           - directory
     // ********************************************************
 
-    def "execExceptionOnTaskFail(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) returns trimmed output when trim=true"( ) {
+    def "execExceptionOnTaskFail(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) sets new working directory"( ) {
 
-        given: "command to execute to get the current username, and trim set to true"
+        given: "command to execute to get the current username, and config to set new working directory"
         List<String> task = Arrays.asList( 'pwd' )
         Map<String,String> cfg = new HashMap<String,String>( )
         cfg.put( 'directory', tempDir.toString( ) )
 
         when: "execute the command"
-        String result = Exec.execExceptionOnTaskFail( task, null, null, null )
-        //?
         String oldWorkingDir = Exec.exec( task, null, null, null ).out
-        Map<String,String> resultMap = Exec.exec( task, cfg, null, null )
+        String result = Exec.execExceptionOnTaskFail( task, cfg, null, null )
 
-        then: "map key 'exitValue' is '0'"
-        resultMap.exitValue.equals( '0' )
-
-        and: "returns the correct new working directory in map key 'out'"
-        tempDir.toString( ).equals( resultMap.out )
+        then: "returns the correct new working directory"
+        tempDir.toString( ).equals( result )
 
         and: "previously had a different working directory than the new working directory"
         System.getProperty( 'user.dir' ).equals( oldWorkingDir )
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
     }
+
 
     // ********************************************************
     // execExceptionOnTaskFail
@@ -267,19 +234,13 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
         cfg.put( 'redirectOutType', 'overwrite' )
 
         when: "execute the command"
-        String result = Exec.execExceptionOnTaskFail( task, null, null, null )
+        String result = Exec.execExceptionOnTaskFail( task, cfg, null, null )
 
-        then: "map key 'exitValue' is '0'"
-        resultMap.exitValue.equals( '0' )
-
-        and: "output file has contents 'user'"
+        then: "output file has contents 'user'"
         Files.readString( Path.of( outFilePath ) ).trim( ).equals( 'user' )
 
-        and: "map key 'out' is not present"
-        resultMap.containsKey( 'out' ) == false
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
+        and: "result is empty String"
+        result.equals( '' )
     }
 
     def "execExceptionOnTaskFail(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) for invalid task when redirecting output to file"( ) {
@@ -292,19 +253,16 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
         cfg.put( 'redirectOutType', 'overwrite' )
 
         when: "execute the command"
-        String result = Exec.execExceptionOnTaskFail( task, null, null, null )
+        String result = Exec.execExceptionOnTaskFail( task, cfg, null, null )
 
-        then: "map key 'exitValue' is '1'"
-        resultMap.exitValue.equals( '1' )
+        then: "thrown exception"
+        def e = thrown( TaskExecutionException )
+
+        and: "thrown exception contains error message"
+        e.message.contains( "invalid option" )
 
         and: "output file has no contents"
         Files.readString( Path.of( outFilePath ) ).trim( ).equals( '' )
-
-        and: "map key 'out' is not present"
-        resultMap.containsKey( 'out' ) == false
-
-        and: "map key 'err' contains error message"
-        resultMap.err.contains( 'invalid option' )
     }
 
     def "execExceptionOnTaskFail(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) overwrites existing file content when output redirected to file with option 'overwrite'"( ) {
@@ -321,19 +279,13 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
         Files.write( Path.of( outFilePath ), originalContent.getBytes( ) )
 
         when: "execute the command"
-        String result = Exec.execExceptionOnTaskFail( task, null, null, null )
+        String result = Exec.execExceptionOnTaskFail( task, cfg, null, null )
 
-        then: "map key 'exitValue' is '0'"
-        resultMap.exitValue.equals( '0' )
-
-        and: "output file has contents 'user'"
+        then: "output file has contents 'user'"
         Files.readString( Path.of( outFilePath ) ).trim( ).equals( 'user' )
 
-        and: "map key 'out' is not present"
-        resultMap.containsKey( 'out' ) == false
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
+        and: "result is empty String"
+        result.equals( '' )
     }
 
     def "execExceptionOnTaskFail(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) appends to existing file when output redirected to file with option 'append'"( ) {
@@ -350,19 +302,13 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
         Files.write( Path.of( outFilePath ), originalContent.getBytes( ) )
 
         when: "execute the command"
-        String result = Exec.execExceptionOnTaskFail( task, null, null, null )
+        String result = Exec.execExceptionOnTaskFail( task, cfg, null, null )
 
-        then: "map key 'exitValue' is '0'"
-        resultMap.exitValue.equals( '0' )
-
-        and: "output file has contents 'user'"
+        then: "output file has contents 'user'"
         Files.readString( Path.of( outFilePath ) ).trim( ).equals( originalContent + 'user' )
 
-        and: "map key 'out' is not present"
-        resultMap.containsKey( 'out' ) == false
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
+        and: "result is empty String"
+        result.equals( '' )
     }
 
     def "execExceptionOnTaskFail(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) throws error when given redirectOutFilePath but no redirectOutType"( ) {
@@ -374,7 +320,7 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
         cfg.put( 'redirectOutFilePath', outFilePath )
 
         when: "execute the command"
-        String result = Exec.execExceptionOnTaskFail( task, null, null, null )
+        String result = Exec.execExceptionOnTaskFail( task, cfg, null, null )
 
         then: "exception thrown"
         thrown IllegalArgumentException
@@ -389,7 +335,7 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
         cfg.put( 'redirectOutFilePath', outFilePath )
 
         when: "execute the command"
-        String result = Exec.execExceptionOnTaskFail( task, null, null, null )
+        String result = Exec.execExceptionOnTaskFail( task, cfg, null, null )
 
         then: "exception thrown"
         thrown IllegalArgumentException
@@ -405,7 +351,7 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
         cfg.put( 'redirectOutType', 'illegal-value' )
 
         when: "execute the command"
-        String result = Exec.execExceptionOnTaskFail( task, null, null, null )
+        String result = Exec.execExceptionOnTaskFail( task, cfg, null, null )
 
         then: "exception thrown"
         thrown IllegalArgumentException
@@ -420,7 +366,7 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
     //           - redirectErrType
     // ********************************************************
 
-    // test that can't do these things... throw exception?
+    // todo test that can't do these things... throw exception?
 
 
     // ********************************************************
@@ -435,17 +381,11 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
         Map<String,String> addEnv = new HashMap<String,String>( )
 
         when: "execute the command"
-        String result = Exec.execExceptionOnTaskFail( task, null, null, null )
+        String result = Exec.execExceptionOnTaskFail( task, null, addEnv, null )
 
-        then: "map key 'exitValue' is '0'"
-        resultMap.exitValue.equals( '0' )
-
-        and: "returns the correct username from executing the command in map key 'out'"
+        then: "returns the correct username from executing the command"
         String usernameExpected = System.properties[ 'user.name' ]
-        usernameExpected.equals( resultMap.out )
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
+        usernameExpected.equals( result )
     }
 
     def "execExceptionOnTaskFail(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) returns correctly with one key-value pair in 'addEnv'"( ) {
@@ -456,16 +396,10 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
         addEnv.put( 'GREET', 'HOWDY' )
 
         when: "execute the command"
-        String result = Exec.execExceptionOnTaskFail( task, null, null, null )
+        String result = Exec.execExceptionOnTaskFail( task, null, addEnv, null )
 
-        then: "map key 'exitValue' is '0'"
-        resultMap.exitValue.equals( '0' )
-
-        and: "returns the env var in map key 'out'"
-        resultMap.out.contains( 'GREET=HOWDY' )
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
+        then: "returns the env var"
+        result.contains( 'GREET=HOWDY' )
     }
 
     def "execExceptionOnTaskFail(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) returns correctly with more than one key-value pair in 'addEnv'"( ) {
@@ -477,17 +411,11 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
         addEnv.put( 'GREET2', 'HEY' )
 
         when: "execute the command"
-        String result = Exec.execExceptionOnTaskFail( task, null, null, null )
+        String result = Exec.execExceptionOnTaskFail( task, null, addEnv, null )
 
-        then: "map key 'exitValue' is '0'"
-        resultMap.exitValue.equals( '0' )
-
-        and: "returns the env var in map key 'out'"
-        resultMap.out.contains( 'GREET1=HI' )
-        resultMap.out.contains( 'GREET2=HEY' )
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
+        then: "returns the env var"
+        result.contains( 'GREET1=HI' )
+        result.contains( 'GREET2=HEY' )
     }
 
 
@@ -503,17 +431,11 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
         List<String> removeEnv = new ArrayList<String>( )
 
         when: "execute the command"
-        String result = Exec.execExceptionOnTaskFail( task, null, null, null )
+        String result = Exec.execExceptionOnTaskFail( task, null, null, removeEnv )
 
-        then: "map key 'exitValue' is '0'"
-        resultMap.exitValue.equals( '0' )
-
-        and: "returns the correct username from executing the command in map key 'out'"
+        then: "returns the correct username from executing the command"
         String usernameExpected = System.properties[ 'user.name' ]
-        usernameExpected.equals( resultMap.out )
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
+        usernameExpected.equals( result )
     }
 
     def "execExceptionOnTaskFail(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) returns correctly with one env var in 'removeEnv' to remove"( ) {
@@ -526,16 +448,10 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
         removeEnv.add( 'GREET' )
 
         when: "execute the command"
-        String result = Exec.execExceptionOnTaskFail( task, null, null, null )
+        String result = Exec.execExceptionOnTaskFail( task, null, null, removeEnv )
 
-        then: "map key 'exitValue' is '0'"
-        resultMap.exitValue.equals( '0' )
-
-        and: "returns in 'out' the environment variables without the 'GREET' env var"
-        !resultMap.out.contains( 'GREET=' )
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
+        then: "returns the environment variables without the 'GREET' env var"
+        !result.contains( 'GREET=' )
     }
 
     def "execExceptionOnTaskFail(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) returns correctly with more than one env var in 'removeEnv' to remove"( ) {
@@ -550,18 +466,11 @@ class ExecTest_execExceptionOnTaskFail extends Specification {
         removeEnv.add( 'GREET2' )
 
         when: "execute the command"
-        String result = Exec.execExceptionOnTaskFail( task, null, null, null )
+        String result = Exec.execExceptionOnTaskFail( task, null, null, removeEnv )
 
-        then: "map key 'exitValue' is '0'"
-        resultMap.exitValue.equals( '0' )
-
-        and: "returns in 'out' the environment variables without the 'GREET1' and 'GREET2' env vars"
-        !resultMap.out.contains( 'GREET1=' )
-        !resultMap.out.contains( 'GREET2=' )
-
-        and: "map key 'err' is not present"
-        resultMap.containsKey( 'err' ) == false
+        then: "returns the environment variables without the 'GREET1' and 'GREET2' env vars"
+        !result.contains( 'GREET1=' )
+        !result.contains( 'GREET2=' )
     }
-    */
 
 }

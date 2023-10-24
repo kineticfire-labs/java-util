@@ -197,7 +197,7 @@ class ExecTest_exec extends Specification {
         resultMap.exitValue.equals( '0' )
 
         and: "returns the correct username from executing the command in map key 'out', with output untrimmed"
-        String usernameExpected = System.properties[ 'user.name' ] + '\n';
+        String usernameExpected = System.properties[ 'user.name' ] + System.lineSeparator( );
         usernameExpected.equals( resultMap.out )
 
         and: "map key 'err' is not present"
@@ -225,9 +225,9 @@ class ExecTest_exec extends Specification {
     //           - directory
     // ********************************************************
 
-    def "exec(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) returns trimmed output when trim=true"( ) {
+    def "exec(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) sets corrected working directory"( ) {
 
-        given: "command to execute to get the current username, and trim set to true"
+        given: "command to execute to get the current username, and config to set new working directory"
         List<String> task = Arrays.asList( 'pwd' )
         Map<String,String> cfg = new HashMap<String,String>( )
         cfg.put( 'directory', tempDir.toString( ) )

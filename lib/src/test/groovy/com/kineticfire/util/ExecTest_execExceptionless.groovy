@@ -37,7 +37,7 @@ import spock.lang.TempDir
  *
  */
 @Timeout( value = 1, unit = MINUTES )
-class ExecUtilsTest extends Specification {
+class ExecTest_execExceptionless extends Specification {
 
     @TempDir
     Path tempDir
@@ -48,12 +48,45 @@ class ExecUtilsTest extends Specification {
     //      - task, x, x, x
     // ********************************************************
 
-    //todo update.... 'success' key
 
+    /* todo -- save for reference for testing caught exceptions
+    def "execExceptionless(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) exception test"( ) {
+
+        given: "invalid null task"
+        List<String> task = null
+
+        when: "execute the command"
+        Map<String,String> resultMap = Exec.execExceptionless( task, null, null, null )
+
+        then: "map key 'success' is false"
+        resultMap.success.equals( 'false' )
+
+        and: "map key 'exitValue' is not present"
+        resultMap.containsKey( 'exitValue' ) == false
+
+        and: "map key 'out' is not present"
+        resultMap.containsKey( 'out' ) == false
+
+        and: "map key 'err' contains reference to exception"
+        resultMap.err.contains( 'java.lang.NullPointerException' )
+
+        and: "map key 'err' contains reference to called method"
+        resultMap.err.contains( 'com.kineticfire.util.Exec.exec(Exec.java:' )
+
+        and: "map key 'err' contains reference to called method"
+        resultMap.err.contains( 'com.kineticfire.util.Exec.execExceptionless(Exec.java:' )
+
+    }
+    */
+
+
+    //todo update.... 'success' key
+    /*
     def "execExceptionless(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) for valid task without CL arguments returns exitValue of 0"( ) {
 
         given: "command without arguments to execute to get the current username"
-        List<String> task = Arrays.asList( 'whoami' )
+        //List<String> task = Arrays.asList( 'whoami' )
+        List<String> task = null
 
         when: "execute the command"
         Map<String,String> resultMap = Exec.execExceptionless( task, null, null, null )
@@ -69,7 +102,6 @@ class ExecUtilsTest extends Specification {
         resultMap.containsKey( 'err' ) == false
     }
 
-    /*
 
     def "execExceptionless(List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv) for valid task with one CL argument returns exitValue of 0"( ) {
 

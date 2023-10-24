@@ -80,7 +80,7 @@ public final class Exec {
     * <ul>
     *    <li>exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>
     *    <li>out - the output returned by the process as a String, which could be an empty String; defined unless the output was redirected to a file</li>
-    *    <li>err - contains the error output returned by the process as a String; defined unless an an error occurred (e.g. exitValue is non-zero), standard error wasn't merged with standard output, and standard error wasn't redirected to a file</li>
+    *    <li>err - contains the error output returned by the process as a String; defined if an error occurred (e.g. exitValue is non-zero), standard error wasn't merged with standard output, and standard error wasn't redirected to a file</li>
     * </ul>
     *
     * @param task
@@ -407,15 +407,18 @@ public final class Exec {
       Map<String,String> resultMap = exec( task, config, addEnv, removeEnv );
             /* return is as below, or an exception is thrown:
              *    - exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error
-             *    - out       - the output returned by the process as a String, which could be an empty String; always present in this case since output not redirected to a file
+             *    - out       - the output returned by the process as a String, which could be an empty String; defined unless output not redirected to a file
              *    - err       - contains the error output returned by the process as a String; only present if an an error occurred, e.g. exitValue is non-zero; in this case, can't merge standard error with standard output, and can't redirect standard error to a file
              */
 
 
       if ( resultMap.get( "exitValue" ).equals( "0" ) ) {
 
-         // key 'out' always defined in this case, since output cannot be redirected to a file; 'out' may be empty String
-         out = resultMap.get( "out" );
+         if ( resultMap.get( "out" ) != null ) {
+            out = resultMap.get( "out" );
+         }
+         // else, will be empty string
+
 
       } else { 
 
@@ -498,9 +501,9 @@ public final class Exec {
     * <p>
     * Returns a Map with key-value pairs, unless an exception is thrown:
     * <ul>
-    *    <li>exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>
-    *    <li>out - the output returned by the process as a String, which could be an empty String; defined unless the output was redirected to a file</li>
-    *    <li>err - contains the error output returned by the process as a String; defined unless an an error occurred (e.g. exitValue is non-zero), standard error wasn't merged with standard output, and standard error wasn't redirected to a file</li>
+    *    <li>exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error; defined if the process executed and returned a value</li>
+    *    <li>out - the output returned by the process as a String, which could be an empty String; defined if the process executed, unless the output was redirected to a file</li>
+    *    <li>err - contains the error output returned by the process as a String; defined if an error occurred (e.g. an exception was thrown and the process didn't run or the process ran and returned a non-zero exitValue), standard error wasn't merged with standard output, and standard error wasn't redirected to a file</li>
     * </ul>
     *
     * @param task
@@ -566,21 +569,9 @@ public final class Exec {
          }
          // else: already set success->false
       
-      } catch ( NullPointerException e ) {
-         resultMap.put( "err", generateErrorMessageFromException( e ) );
-      } catch ( IndexOutOfBoundsException e ) {
-         resultMap.put( "err", generateErrorMessageFromException( e ) );
-      } catch ( SecurityException e ) {
-         resultMap.put( "err", generateErrorMessageFromException( e ) );
-      } catch ( UnsupportedOperationException e ) {
-         resultMap.put( "err", generateErrorMessageFromException( e ) );
-      } catch ( IOException e ) {
-         resultMap.put( "err", generateErrorMessageFromException( e ) );
       } catch ( Exception e ) {
          resultMap.put( "err", generateErrorMessageFromException( e ) );
       }
-      //todo are these all exceptions?
-      //todo are these all exceptions needed, or will getClass().getName() be sufficient?
 
 
       return( resultMap );
@@ -589,14 +580,30 @@ public final class Exec {
 
 
 
+   /*
+    * Returns an error message String for the given exception.
+    *
+    * @param e
+    *    exception
+    * @return a String error message for the given exception or an empty String if the exception is null
+    */
    private static String generateErrorMessageFromException( Exception e ) {
 
       StringBuilder sb = new StringBuilder( );
 
-      sb.append( e.getClass( ).getName( ) );
+      if ( e != null ) {
 
-      if ( e.getMessage( ) != null && e.getMessage( ) != "" ) {
-         sb.append( ": " + e.getMessage( ) );
+         sb.append( e.getClass( ).getName( ) );
+
+         if ( e.getMessage( ) != null && e.getMessage( ) != "" ) {
+            sb.append( ": " + e.getMessage( ) );
+         }
+
+         for ( StackTraceElement element : e.getStackTrace( ) ) {
+            sb.append( System.lineSeparator( ) );
+            sb.append( element.toString( ) );
+         }
+
       }
 
       return( sb.toString( ) );
@@ -694,6 +701,10 @@ public final class Exec {
     }
 
 
+    /*
+     * Captures text output.
+     *
+     */
     private static class TextDumper implements Runnable {
       /*
        * From: Groovy 4.0.15
@@ -732,6 +743,8 @@ public final class Exec {
    /*
     * Closes all streams associated with the process, ignoring any IOExceptions
     *
+    * @param proc
+    *    process
     */
    private static void closeStreams( Process proc ) {
       /*
