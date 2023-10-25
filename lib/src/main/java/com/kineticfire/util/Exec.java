@@ -35,7 +35,7 @@ import java.io.IOException;
 
 
 /**
- * Provides command line task execution utilities.
+ * Provides native command line task execution utilities.
  * <p>
  * The methods execute a task as a native command line process, passed as a List&lt;String&gt; argument to the method, and then return the String output of that command.  The methods differ primarily in return type mechanisms, error handling, and ability to redirect standard error.
  *
@@ -44,7 +44,7 @@ public final class Exec {
 
 
    /**
-    * Executes a task as a native command line process and returns a Map result, returning error output from the process, if any, or redirecting it to a file.
+    * Executes a task as a native command line process and returns a Map result, including any error output from the process.
     * <p>
     * This method provides a wrapper around Java's ProcessBuilder and Process for simplifying configuration through convention, handling access to and buffering process outputs, and promptly writing to the input stream and reading from the output stream to prevent process block or deadlock.
     * <p>
@@ -89,7 +89,7 @@ public final class Exec {
 
 
    /**
-    * Executes a task as a native command line process and returns a Map result, returning error output from the process, if any, or redirecting it to a file.
+    * Executes a task as a native command line process and returns a Map result, including error output from the process, unless the ouitput or error output were redirected to a file(s).
     * <p>
     * This method provides a wrapper around Java's ProcessBuilder and Process for simplifying configuration through convention, handling access to and buffering process outputs, and promptly writing to the input stream and reading from the output stream to prevent process block or deadlock.
     * <p>
@@ -154,7 +154,7 @@ public final class Exec {
 
 
    /**
-    * Executes a task as a native command line process and returns a Map result, returning error output from the process, if any, or redirecting it to a file.
+    * Executes a task as a native command line process and returns a Map result, including error output from the process, unless the ouitput or error output were redirected to a file(s).
     * <p>
     * This method provides a wrapper around Java's ProcessBuilder and Process for simplifying configuration through convention, handling access to and buffering process outputs, and promptly writing to the input stream and reading from the output stream to prevent process block or deadlock.
     * <p>
@@ -641,7 +641,7 @@ public final class Exec {
    }
 
 
-   /**
+   /*
     * Gets the output and error streams from a process and reads them
     * to keep the process from blocking due to a full output buffer.
     * The processed stream data is appended to the supplied Appendable.
@@ -682,7 +682,7 @@ public final class Exec {
    }
 
 
-    /**
+    /*
      * Gets the output stream from a process and reads it
      * to keep the process from blocking due to a full output buffer.
      * The processed stream data is appended to the supplied Appendable.
@@ -712,7 +712,7 @@ public final class Exec {
     }
 
 
-    /**
+    /*
      * Gets the error stream from a process and reads it
      * to keep the process from blocking due to a full buffer.
      * The processed stream data is appended to the supplied Appendable.
@@ -724,7 +724,7 @@ public final class Exec {
      *   an Appendable to capture the process stderr
      * @return the Thread
      */
-    public static Thread consumeProcessErrorStream( Process proc, Appendable error ) {
+    private static Thread consumeProcessErrorStream( Process proc, Appendable error ) {
       /*
        * From: Groovy 4.0.15
        * Link: https://github.com/apache/groovy/blob/GROOVY_4_0_15/src/main/java/org/codehaus/groovy/runtime/ProcessGroovyMethods.java

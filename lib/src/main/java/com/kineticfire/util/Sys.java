@@ -15,9 +15,13 @@
  */
 package com.kineticfire.util;
 
+
+
+//todo comments
 import java.nio.file.Path; //interface: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/nio/file/Path.html
 import java.io.File; // class: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/io/File.html
 import java.util.Map;
+
 
 //todo for testing
 import java.util.HashMap;
@@ -60,12 +64,12 @@ public final class Sys {
    }
 
 
-   /**
-    * Validates the script at 'scriptPath' and returns a Map of the result.
+   /*
+    * Validates the script and returns a Map result.
     * <p>
     * Uses the 'shellcheck' utility for static analysis and linting tool for sh/bash scripts.
     * <p>
-    * Returns a result as a Map with key-value pairs:
+    * Returns a Map&lt;String,String&gt; result with key-value pairs:
     * <ul>
     *    <ol>ok - boolean true if the script passed validation (exitValue will be 0) and false otherwise (exitValue will be non-zero)</ol>
     *    <ol>exitValue - the integer exit value returned by the process on range of [0,255]; 0 for successful script validation and other values indicate an error</ol>
@@ -74,15 +78,15 @@ public final class Sys {
     * </ul>
     * <p>
     * Requirements:
-    * <ol>
+    * <ul>
     *    <li>Unix-like system</li>
     *    <li>'shellcheck' is installed</li>
-    *    <li>bash/sh scripts</li>
-    * </ol>
+    *    <li>script is a bash/sh script</li>
+    * </ul>
     *
     * @param script
     *    the path as a String to the sh/bash script to validate
-    * @return a Map of the result of the script validation
+    * @return result as a Map of the script validation
     */
    private static Map<String,String> validateScriptForUnixLikePlatform( String script ) {
 
@@ -111,4 +115,5 @@ public final class Sys {
    private Sys( ) { 
       throw new UnsupportedOperationException( "Class instantiation not supported" );
    }
+
 }
