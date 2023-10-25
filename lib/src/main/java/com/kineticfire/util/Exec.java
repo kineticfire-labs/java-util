@@ -17,6 +17,7 @@ package com.kineticfire.util;
 
 
 
+
 import com.kineticfire.util.TaskExecutionException;
 
 
@@ -32,29 +33,53 @@ import java.io.File;
 import java.io.IOException;
 
 
-//todo update class docs
+
 /**
- * Provides command line execution utilities.
+ * Provides command line task execution utilities.
  * <p>
- * The methods execute a given command, passed as an argument to the method, and then return the String output of that command.  The methods differ in return types, error handling, and the type of argument for the command.
- * <p>
- * Two types of methods, differing in error handling and return values, are available to execute commands:
- * <ol>
- *   <li>exec(...) returns a Map of the result of the command that includes a boolean value if the command was successful or not based on the exit value, the integer exit value, the output as a String, and (if an error did occur) the error output as a String.</li>
- *   <li>execWithException(...) returns the output of the command as a String or, if an error occurred, throws an exception.  The exit value and error output are captured in the exception's message.</li>
- * </ol>
- * <p>
- * Methods accepting two types of arguments for the command to execute are available:
- * <ol>
- *   <li>argument 'String' is generally simpler of the two methods to use, however complex commands/arguments may not work as expected</li>
- *   <li>argument 'String[]' will work as expected for more complex commands/arguments</li>
- * </ol>
+ * The methods execute a task as a native command line process, passed as a List&lt;String&gt; argument to the method, and then return the String output of that command.  The methods differ primarily in return type mechanisms, error handling, and ability to redirect standard error.
  *
  */
 public final class Exec {
 
 
-   //todo document
+   /**
+    * Executes a task as a native command line process and returns a Map result, returning error output from the process, if any, or redirecting it to a file.
+    * <p>
+    * This method provides a wrapper around Java's ProcessBuilder and Process for simplifying configuration through convention, handling access to and buffering process outputs, and promptly writing to the input stream and reading from the output stream to prevent process block or deadlock.
+    * <p>
+    * This method is a convenience method for 'exec(List&lt;String&gt;,null,null,null)' which is similar to 'execExceptionOnTaskFail(...)', however that method returns a String result or an exception on any failure (to include the command line task itself) while this method returns a Map&lt;String,String&gt; result for command line task success or failure else throws an exception for other failure cases.  Other 'exec(...)' methods allow standard error to be redirected to a file or to standard error, while 'execExceptionOnTaskFail(...)' does not.
+    * <p>
+    * The first item in the task list is treated as the command and any additional items are treated as parameters.  The task is required.
+    * <p>
+    * Returns a Map (unless an exception is thrown) with key-value pairs:
+    * <ul>
+    *    <li>exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>
+    *    <li>out - the output returned by the process as a String, which could be an empty String; always defined</li>
+    *    <li>err - contains the error output returned by the process as a String; defined if an error occurred (e.g. exitValue is non-zero)</li>
+    * </ul>
+    *
+    * @param task
+    *    the task to execute as a String List, where the first item is the command and any subsequent items are arguments; required
+    * @return a Map of the result of the command execution
+    * @throws IllegalArgumentException
+    *    <ul>
+    *       <li>if an illegal or innapropriate argument was passed to this method</li>
+    *    </ul>
+    * @throws IndexOutOfBoundsException
+    *    if the task is an empty list
+    * @throws IOException
+    *    if an I/O error occurs
+    * @throws NullPointerException
+    *    if an element in task list is null
+    * @throws SecurityException if a security manager exists and
+    *    <ul>
+    *       <li>when attemping to start the process, its checkExec method doesn't allow creation of the subprocess, or</li>
+    *       <li>its checkPermission method doesn't allow access to the process environment</li>
+    *    </ul>
+    * @throws UnsupportedOperationException
+    *    if the operating system does not support the creation of processes
+    */
    public static Map<String,String> exec( List<String> task )
         throws IOException { 
 
@@ -63,7 +88,63 @@ public final class Exec {
    }
 
 
-   //todo document
+   /**
+    * Executes a task as a native command line process and returns a Map result, returning error output from the process, if any, or redirecting it to a file.
+    * <p>
+    * This method provides a wrapper around Java's ProcessBuilder and Process for simplifying configuration through convention, handling access to and buffering process outputs, and promptly writing to the input stream and reading from the output stream to prevent process block or deadlock.
+    * <p>
+    * This method is a convenience method for 'exec(List&lt;String&gt;,Map&lt;String,String&gt;,null,null)' which is similar to 'execExceptionOnTaskFail(...)', however that method returns a String result or an exception on any failure (to include the command line task itself) while this method returns a Map&lt;String,String&gt; result for command line task success or failure else throws an exception for other failure cases.  This method allows standard error to be redirected to a file or to standard error, while 'execExceptionOnTaskFail(...)' does not.
+    * <p>
+    * The first item in the task list is treated as the command and any additional items are treated as parameters.  The task is required.
+    * <p>
+    * The optional config (which may be null or empty) defines configuration as key-value pairs as follows:
+    * <ul>
+    *    <li>trim - "true" to trim standard output and error output when not written to a file and "false" otherwise"; optional, defaults to "true"</li>
+    *    <li>directory - the working directory in which the task should execute; optional, defaults to the current directory from which the program is executed</li>
+    *    <li>redirectOutFilePath - redirect standard output by providing a file path and name of the output file; must also define 'redirectOutType' otherwise an exception is thrown; optional, defaults to returning standard output as  String in Map key 'out'</li>
+    *    <li>redirectOutType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents; required if defining 'redirectOutFilePath', otherwise defining will throw an exception</li>
+    *    <li>redirectErrToOut - "true" to redirect the standard error to standard output; optional, default is not to redirect standard error; cannot be used in combination with 'redirectErrToFile' otherwise an exception will be thrown</li>
+    *    <li>redirectErrFilePath - redirect standard error by providing a file path and name of the error file; must also define 'redirectErrType' otherwise an exception is thrown; cannot use in conjection with 'redirectErrToFile' otherwise an error is thrown; optional, defaults to return standard error in Map key 'err'</li>
+    *    <li>redirectErrType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents; required if defining 'redirectErrFilePath', otherwise defining will throw an exception</li>
+    * </ul>
+    * Returns a Map (unless an exception is thrown) with key-value pairs:
+    * <ul>
+    *    <li>exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>
+    *    <li>out - the output returned by the process as a String, which could be an empty String; defined unless the output was redirected to a file</li>
+    *    <li>err - contains the error output returned by the process as a String; defined if an error occurred (e.g. exitValue is non-zero), standard error wasn't merged with standard output, and standard error wasn't redirected to a file</li>
+    * </ul>
+    *
+    * @param task
+    *    the task to execute as a String List, where the first item is the command and any subsequent items are arguments; required
+    * @param config
+    *    a Map of key-value pairs defining the configuration; optional, can be empty or null
+    * @return a Map of the result of the command execution
+    * @throws IllegalArgumentException
+    *    if an illegal or innapropriate argument was passed to this method
+    * @throws IndexOutOfBoundsException
+    *    if the task is an empty list
+    * @throws IOException
+    *    if an I/O error occurs
+    * @throws NullPointerException
+    *    <ul>
+    *       <li>if an element in task list is null, or</li>
+    *       <li>if defining an output file with a null pathname</li>
+    *    </ul>
+    * @throws SecurityException if a security manager exists and
+    *    <ul>
+    *       <li>when attemping to start the process</li>
+    *       <ul>
+    *          <li>its checkExec method doesn't allow creation of the subprocess, or</li>
+    *          <li>the standard input to the subprocess was redirected from a file and the security manager's checkRead method denies read access to the file, or</li>
+    *          <li>the standard output or standard error of the subprocess was redirected to a file and the security manager's checkWrite method denies write access to the file, or</li>
+    *       </ul>
+    *       <ul>
+    *          <li>its checkPermission method doesn't allow access to the process environment</li>
+    *       </ul>
+    *    </ul>
+    * @throws UnsupportedOperationException
+    *    if the operating system does not support the creation of processes
+    */
    public static Map<String,String> exec( List<String> task, Map<String,String> config )
         throws IOException { 
 
@@ -75,9 +156,9 @@ public final class Exec {
    /**
     * Executes a task as a native command line process and returns a Map result, returning error output from the process, if any, or redirecting it to a file.
     * <p>
-    * This method provides a convenience wrapper around Java's ProcessBuilder and Process for simplifying configuration through convention, handling access to and buffering process outputs, and promptly writing to the input stream and reading from the output stream to prevent process block or deadlock.
+    * This method provides a wrapper around Java's ProcessBuilder and Process for simplifying configuration through convention, handling access to and buffering process outputs, and promptly writing to the input stream and reading from the output stream to prevent process block or deadlock.
     * <p>
-    * todo compare to execExceptionOnTaskFail
+    * This method is similar to 'execExceptionOnTaskFail(...)', however that method returns a String result or an exception on any failure (to include the command line task itself) while this method returns a Map&lt;String,String&gt; result for command line task success or failure else throws an exception for other failure cases.  This method allows standard error to be redirected to a file or to standard error, while 'execExceptionOnTaskFail(...)' does not.
     * <p>
     * The first item in the task list is treated as the command and any additional items are treated as parameters.  The task is required.
     * <p>
@@ -141,10 +222,10 @@ public final class Exec {
     *       </ul>
     *    </ul>
     * @throws UnsupportedOperationException
-    *    <ol>
+    *    <ul>
     *       <li>if the operating system does not support the creation of processes, or</li>
     *       <li>if configuring environment variables and the system does not allow such modifications</li>
-    *    </ol>
+    *    </ul>
     */
    public static Map<String,String> exec( List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv )
         throws IOException { 
@@ -328,7 +409,36 @@ public final class Exec {
    }
 
 
-   //todo document
+   /**
+    * Executes a task as a native command line process and returns the output as a String on success, throwing exceptions on any task execution failure.
+    * <p>
+    * This method provides a wrapper around Java's ProcessBuilder and Process for simplifying configuration through convention, handling access to and buffering process outputs, and promptly writing to the input stream and reading from the output stream to prevent process block or deadlock.
+    * <p>
+    * This method is a convenience method for 'execExceptionOnTaskFail(List&lt;String&gt;,null,null,null)' which is similar to 'exec(...)', except that method returns a Map&lt;String,String&gt; result for successful or failed command line task and an exception in other cases while this method returns the output of the task as a String if succesful and otherwise throws an exception on any failure (including command line task failure).  A limitation of 'execExceptionOnTaskFail(...)' is that standard error cannot be redirected--to standard out or to a file--as with 'exec(...)' because task errors need to be observed by this method in order to throw the exception.  Information from standard error is available in the thrown exception.
+    * <p>
+    * The first item in the task list is treated as the command and any additional items are treated as parameters.  Required.
+    * <p>
+    * <p>
+    * Returns a String result of the task execution on success, and throws an exception on any error.  An empty String may be returned by the task.
+    *
+    * @param task
+    *    the task to execute as a String List, where the first item is the command and any subsequent items are arguments; required
+    * @return a String result of the command execution
+    * @throws IllegalArgumentException
+    *    if an illegal or innapropriate argument was passed to this method
+    * @throws IndexOutOfBoundsException
+    *    if the task is an empty list
+    * @throws IOException
+    *    if an I/O error occurs
+    * @throws TaskExecutionException
+    *    if the task run as a command line process failed, e.g. it returned a non-zero exit value
+    * @throws NullPointerException
+    *    if an element in task list is null
+    * @throws SecurityException if a security manager exists and
+    *    when attemping to start the process, its checkExec method doesn't allow creation of the subprocess
+    * @throws UnsupportedOperationException
+    *    if the operating system does not support the creation of processes
+    */
    public static String execExceptionOnTaskFail( List<String> task ) 
            throws IOException, TaskExecutionException {
 
@@ -337,23 +447,60 @@ public final class Exec {
    }
 
 
-   //todo document
+   /**
+    * Executes a task as a native command line process and returns the output as a String on success, throwing exceptions on any task execution failure.
+    * <p>
+    * This method provides a wrapper around Java's ProcessBuilder and Process for simplifying configuration through convention, handling access to and buffering process outputs, and promptly writing to the input stream and reading from the output stream to prevent process block or deadlock.
+    * <p>
+    * This method is a convenience method for 'execExceptionOnTaskFail(List&lt;String&gt;,Map&lt;String,String&gt;,null,null)' which is similar to 'exec(...)', except that method returns a Map&lt;String,String&gt; result for successful or failed command line task and an exception in other cases while this method returns the output of the task as a String if succesful and otherwise throws an exception on any failure (including command line task failure).  A limitation of this method is that standard error cannot be redirected--to standard out or to a file--as with 'exec(...)' because task errors need to be observed by this method in order to throw the exception.  Information from standard error is available in the thrown exception.
+    * <p>
+    * The first item in the task list is treated as the command and any additional items are treated as parameters.  Required.
+    * <p>
+    * The optional config (which may be null or empty) defines configuration as key-value pairs as follows:
+    * <ul>
+    *    <li>trim - "true" to trim standard output and error output and "false" otherwise"; optional, defaults to "true"</li>
+    *    <li>directory - the working directory in which the task should execute; optional, defaults to the current directory from which the program is executed</li>
+    *    <li>redirectOutFilePath - redirect standard output by providing a file path and name of the output file; must also define 'redirectOutType' otherwise an exception is thrown; optional, defaults to returning standard output as  String in Map key 'out'</li>
+    *    <li>redirectOutType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents; required if defining 'redirectOutFilePath', otherwise defining will throw an exception</li>
+    * </ul>
+    * <p>
+    * Returns a String result of the task execution on success, and throws an exception on any error.  An empty String may be returned by the task or when standard output is redirected to a file.
+    *
+    * @param task
+    *    the task to execute as a String List, where the first item is the command and any subsequent items are arguments; required
+    * @param config
+    *    a Map of key-value pairs defining the configuration; optional, can be empty or null
+    * @return a String result of the command execution
+    * @throws IllegalArgumentException
+    *    if an illegal or innapropriate argument was passed to this method
+    * @throws IndexOutOfBoundsException
+    *    if the task is an empty list
+    * @throws IOException
+    *    if an I/O error occurs
+    * @throws TaskExecutionException
+    *    if the task run as a command line process failed, e.g. it returned a non-zero exit value
+    * @throws NullPointerException
+    *    <ul>
+    *       <li>if an element in task list is null, or</li>
+    *       <li>if defining an output file with a null pathname</li>
+    *    </ul>
+    * @throws SecurityException if a security manager exists and
+    *    when attemping to start the process, its checkExec method doesn't allow creation of the subprocess
+    * @throws UnsupportedOperationException
+    *    if the operating system does not support the creation of processes
+    */
    public static String execExceptionOnTaskFail( List<String> task, Map<String,String> config ) 
            throws IOException, TaskExecutionException {
       return( execExceptionOnTaskFail( task, config, null, null ) );
    }
 
 
-    //todo if redirecting output to a file, then returns empty string regardless of what was captured on standard output and output to a file
-    //todo if method throws exception on any error, then can't redirect err to to out or redirect err to file.  because then couldn't see err to throw exception.
-    //todo if command line task errs... throw TaskExecutionException
-   
    /**
     * Executes a task as a native command line process and returns the output as a String on success, throwing exceptions on any task execution failure.
     * <p>
-    * This method provides a convenience wrapper around Java's ProcessBuilder and Process for simplifying configuration through convention, handling access to and buffering process outputs, and promptly writing to the input stream and reading from the output stream to prevent process block or deadlock.
+    * This method provides a wrapper around Java's ProcessBuilder and Process for simplifying configuration through convention, handling access to and buffering process outputs, and promptly writing to the input stream and reading from the output stream to prevent process block or deadlock.
     * <p>
-    * This method is equivalent to 'exec(...)', except that method always returns a Map&lt;String,String&gt; result and never throws an exception while this method returns the output of the task as a String if succesful and otherwise throws an exception on any failure.  A limitation of this method is that standard error cannot be redirected--to standard out or to a file--as with 'exec(...)' because task errors need to be observed by this method in order to throw the exception.  Information from standard error is available in the thrown exception.
+    * This method is equivalent to 'exec(...)', except that method returns a Map&lt;String,String&gt; result for successful or failed command line task and an exception in other cases while this method returns the output of the task as a String if succesful and otherwise throws an exception on any failure (including command line task failure).  A limitation of this method is that standard error cannot be redirected--to standard out or to a file--as with 'exec(...)' because task errors need to be observed by this method in order to throw the exception.  Information from standard error is available in the thrown exception.
     * <p>
     * The first item in the task list is treated as the command and any additional items are treated as parameters.  Required.
     * <p>
@@ -369,7 +516,7 @@ public final class Exec {
     * <p>
     * The optional removeEnv (which may be null or empty) defines environment variables as a list to remove when executing the task.
     * <p>
-    * Returns a String result of the task execution on success, and throws an exception on any error.
+    * Returns a String result of the task execution on success, and throws an exception on any error.  An empty String may be returned by the task or when standard output is redirected to a file.
     *
     * @param task
     *    the task to execute as a String List, where the first item is the command and any subsequent items are arguments; required
@@ -399,20 +546,14 @@ public final class Exec {
     *    </ul>
     * @throws SecurityException if a security manager exists and
     *    <ul>
-    *       <li>when attemping to start the process</li>
-    *       <ul>
-    *          <li>its checkExec method doesn't allow creation of the subprocess</li>
-    *       </ul>
-    *       <li>when attemping to configure the environment variables</li>
-    *       <ul>
-    *          <li>its checkPermission method doesn't allow access to the process environment</li>
-    *       </ul>
+    *       <li>when attemping to start the process, its checkExec method doesn't allow creation of the subprocess, or</li>
+    *       <li>when attemping to configure the environment variables, its checkPermission method doesn't allow access to the process environment, or</li>
     *    </ul>
     * @throws UnsupportedOperationException
-    *    <ol>
+    *    <ul>
     *       <li>if the operating system does not support the creation of processes, or</li>
     *       <li>if configuring environment variables and the system does not allow such modifications</li>
-    *    </ol>
+    *    </ul>
     */
    public static String execExceptionOnTaskFail( List<String> task, Map<String,String> config, Map<String,String> addEnv, List<String> removeEnv ) 
            throws IOException, TaskExecutionException {
@@ -446,9 +587,6 @@ public final class Exec {
              *    - out: the output returned by the process as a String, which could be an empty String; defined unless the output was redirected to a file
              *    - err: contains the error output returned by the process as a String; defined if an error occurred (e.g. exitValue is non-zero), standard error wasn't merged with standard output, and standard error wasn't redirected to a file
              */
-
-
-
 
 
       // 'exitValue' always defined
@@ -511,9 +649,12 @@ public final class Exec {
     * As implied by the waitFor... name, we also wait until we finish
     * as well. Finally, the input, output and error streams are closed.
     *
-    * @param self a Process
-    * @param output an Appendable to capture the process stdout
-    * @param error an Appendable to capture the process stderr
+    * @param self
+    *    a Process
+    * @param output
+    *    an Appendable to capture the process stdout
+    * @param error
+    *    an Appendable to capture the process stderr
     */
    private static void waitForProcessOutput( Process proc, Appendable output, Appendable error ) {
       /*
@@ -551,8 +692,10 @@ public final class Exec {
      * Link: https://github.com/apache/groovy/blob/GROOVY_4_0_15/src/main/java/org/codehaus/groovy/runtime/ProcessGroovyMethods.java
      * License: Apache License 2.0
      *
-     * @param self a Process
-     * @param output an Appendable to capture the process stdout
+     * @param self
+     *   a Process
+     * @param output
+     *   an Appendable to capture the process stdout
      * @return the Thread
      */
     private static Thread consumeProcessOutputStream( Process proc, Appendable output ) {
@@ -575,8 +718,10 @@ public final class Exec {
      * The processed stream data is appended to the supplied Appendable.
      * A new Thread is started, so this method will return immediately.
      *
-     * @param self a Process
-     * @param error an Appendable to capture the process stderr
+     * @param self
+     *   a Process
+     * @param error
+     *   an Appendable to capture the process stderr
      * @return the Thread
      */
     public static Thread consumeProcessErrorStream( Process proc, Appendable error ) {
