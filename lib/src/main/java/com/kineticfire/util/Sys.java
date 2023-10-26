@@ -17,14 +17,10 @@ package com.kineticfire.util;
 
 
 
-//todo comments
-import java.nio.file.Path; //interface: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/nio/file/Path.html
-import java.io.File; // class: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/io/File.html
+import java.nio.file.Path;
+import java.io.File;
 import java.util.Map;
 
-
-//todo for testing
-import java.util.HashMap;
 
 
 /**
@@ -34,17 +30,114 @@ import java.util.HashMap;
 public final class Sys {
 
 
+   /**
+    * Validates the script using a native command line process to run an OS-specific validation utility and returns a Map result, including any error output from the process.
+    * <p>
+    * Returns a Map (unless an exception is thrown) with key-value pairs:
+    * <ul>
+    *    <li>exitValue - the String representation of the integer exit value returned by the process; OS-specific meaning, where for Unix-like platforms the value is on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>
+    *    <li>out - the output returned by the process as a trimmed String, which could be an empty String; always defined</li>
+    *    <li>err - contains the error output returned by the process as a trimmed String; defined if an error occurred (e.g. exitValue is non-zero)</li>                                                  
+    * </ul>
+    *
+    * @param script
+    *    the path as a Path to the script to validate
+    * @return result as a Map of the script validation
+    * @throws IllegalArgumentException
+    *    if an illegal or inappropriate argument was passed to this method
+    * @throws IOException
+    *    if an I/O error occurs
+    * @throws NullPointerException
+    *    if an element in task list is null
+    * @throws SecurityException
+    *    if a security manager exists and
+    *    <ul>
+    *       <li>when attemping to start the process, its checkExec method doesn't allow creation of the subprocess, or</li>
+    *       <li>its checkPermission method doesn't allow access to the process environment</li>
+    *    </ul>
+    * @throws UnsupportedOperationException
+    *    <ul>
+    *       <li>if the operating system does not support the creation of processes</li>
+    *       <li>if the operating system is not supported by this method</li>
+    *    </ul>
+    */
    public static Map<String,String> validateScript( Path script ) {
       return( validateScript( script.toString( ) ) );
    }
 
 
-   public static Map<String,String> validateScript( File script ) {
+   /**
+    * Validates the script using a native command line process to run an OS-specific validation utility and returns a Map result, including any error output from the process.
+    * <p>
+    * Returns a Map (unless an exception is thrown) with key-value pairs:
+    * <ul>
+    *    <li>exitValue - the String representation of the integer exit value returned by the process; OS-specific meaning, where for Unix-like platforms the value is on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>
+    *    <li>out - the output returned by the process as a trimmed String, which could be an empty String; always defined</li>
+    *    <li>err - contains the error output returned by the process as a trimmed String; defined if an error occurred (e.g. exitValue is non-zero)</li>                                                  
+    * </ul>
+    *
+    * @param script
+    *    the path as a File to the script to validate
+    * @return result as a Map of the script validation
+    * @throws IllegalArgumentException
+    *    if an illegal or inappropriate argument was passed to this method
+    * @throws IOException
+    *    if an I/O error occurs
+    * @throws NullPointerException
+    *    if an element in task list is null
+    * @throws SecurityException
+    *    if a security manager exists and
+    *    <ul>
+    *       <li>when attemping to start the process, its checkExec method doesn't allow creation of the subprocess, or</li>
+    *       <li>its checkPermission method doesn't allow access to the process environment</li>
+    *    </ul>
+    * @throws UnsupportedOperationException
+    *    <ul>
+    *       <li>if the operating system does not support the creation of processes</li>
+    *       <li>if the operating system is not supported by this method</li>
+    *    </ul>
+    */
+   public static Map<String,String> validateScript( File script )
+         throws IOException {
+
       return( validateScript( script.toString( ) ) );
+
    }
 
 
-   public static Map<String,String> validateScript( String script ) {
+   /**
+    * Validates the script using a native command line process to run an OS-specific validation utility and returns a Map result, including any error output from the process.
+    * <p>
+    * Returns a Map (unless an exception is thrown) with key-value pairs:
+    * <ul>
+    *    <li>exitValue - the String representation of the integer exit value returned by the process; OS-specific meaning, where for Unix-like platforms the value is on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>
+    *    <li>out - the output returned by the process as a trimmed String, which could be an empty String; always defined</li>
+    *    <li>err - contains the error output returned by the process as a trimmed String; defined if an error occurred (e.g. exitValue is non-zero)</li>                                                  
+    * </ul>
+    *
+    * @param script
+    *    the path as a String to the script to validate
+    * @return result as a Map of the script validation
+    * @throws IllegalArgumentException
+    *    if an illegal or inappropriate argument was passed to this method
+    * @throws IOException
+    *    if an I/O error occurs
+    * @throws NullPointerException
+    *    if an element in task list is null
+    * @throws SecurityException
+    *    if a security manager exists and
+    *    <ul>
+    *       <li>when attemping to start the process, its checkExec method doesn't allow creation of the subprocess, or</li>
+    *       <li>its checkPermission method doesn't allow access to the process environment</li>
+    *    </ul>
+    * @throws UnsupportedOperationException
+    *    <ul>
+    *       <li>if the operating system does not support the creation of processes</li>
+    *       <li>if the operating system is not supported by this method</li>
+    *    </ul>
+    */
+   public static Map<String,String> validateScript( String script )
+         throws IOException {
 
       Map<String,String> responseMap = new HashMap<String,String>( );
 
@@ -65,49 +158,56 @@ public final class Sys {
 
 
    /*
-    * Validates the script and returns a Map result.
+    * Validates the script using a native command line process to run the 'shellcheck' utility and returns a Map result, including any error output from the process.
     * <p>
     * Uses the 'shellcheck' utility for static analysis and linting tool for sh/bash scripts.
     * <p>
-    * Returns a Map&lt;String,String&gt; result with key-value pairs:
+    * Returns a Map (unless an exception is thrown) with key-value pairs:
     * <ul>
-    *    <ol>ok - boolean true if the script passed validation (exitValue will be 0) and false otherwise (exitValue will be non-zero)</ol>
-    *    <ol>exitValue - the integer exit value returned by the process on range of [0,255]; 0 for successful script validation and other values indicate an error</ol>
-    *    <ol>out - the output returned by the process as a trimmed String, which could be an empty String</ol>
-    *    <ol>err - contains the error output returned by the process as a trimmed String; only present if an an error occurred e.g. 'ok' is false and 'exitValue' is non-zero</ol>
+    *    <li>exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>
+    *    <li>out - the output returned by the process as a trimmed String, which could be an empty String; always defined</li>
+    *    <li>err - contains the error output returned by the process as a trimmed String; defined if an error occurred (e.g. exitValue is non-zero)</li>                                                  
     * </ul>
     * <p>
     * Requirements:
     * <ul>
     *    <li>Unix-like system</li>
-    *    <li>'shellcheck' is installed</li>
-    *    <li>script is a bash/sh script</li>
+    *    <li>'shellcheck' utility is installed</li>
+    *    <li>script to validate is a bash/sh script</li>
     * </ul>
     *
     * @param script
     *    the path as a String to the sh/bash script to validate
     * @return result as a Map of the script validation
+    * @throws IllegalArgumentException
+    *    if an illegal or inappropriate argument was passed to this method
+    * @throws IOException
+    *    if an I/O error occurs
+    * @throws NullPointerException
+    *    if an element in task list is null
+    * @throws SecurityException
+    *    if a security manager exists and
+    *    <ul>
+    *       <li>when attemping to start the process, its checkExec method doesn't allow creation of the subprocess, or</li>
+    *       <li>its checkPermission method doesn't allow access to the process environment</li>
+    *    </ul>
+    * @throws UnsupportedOperationException
+    *    if the operating system does not support the creation of processes
     */
-   private static Map<String,String> validateScriptForUnixLikePlatform( String script ) {
+   private static Map<String,String> validateScriptForUnixLikePlatform( String script ) 
+      throws IOException {
 
-      String[] commandArray = { "shellcheck", script };
+      List<String> task = Arrays.asList( "shellcheck", script )
 
-      /*
+      Map<String,String> responseMap = ExecUtils.exec( task );
 
-      Map<String,String> responseMap = ExecUtils.exec( commandArray )
-
-      if ( responseMap.get( "exitValue" ) == 0 ) {
-         responseMap.ok = true
+      if ( responseMap.get( "exitValue" ).equals( "0" ) ) {
+         responseMap.ok = "true"
       } else {
-         responseMap.ok = false
+         responseMap.ok = "false"
       }
 
-      responseMap.remove( "success" )
-
       return( responseMap )
-      */
-
-      return( new HashMap<String,String>( ) );
 
    }
 

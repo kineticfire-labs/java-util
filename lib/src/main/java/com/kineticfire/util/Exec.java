@@ -55,24 +55,23 @@ public final class Exec {
     * Returns a Map (unless an exception is thrown) with key-value pairs:
     * <ul>
     *    <li>exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>
-    *    <li>out - the output returned by the process as a String, which could be an empty String; always defined</li>
-    *    <li>err - contains the error output returned by the process as a String; defined if an error occurred (e.g. exitValue is non-zero)</li>
+    *    <li>out - the output returned by the process as a trimmed String, which could be an empty String; always defined</li>
+    *    <li>err - contains the error output returned by the process as a trimmed String; defined if an error occurred (e.g. exitValue is non-zero)</li>
     * </ul>
     *
     * @param task
     *    the task to execute as a String List, where the first item is the command and any subsequent items are arguments; required
     * @return a Map of the result of the command execution
     * @throws IllegalArgumentException
-    *    <ul>
-    *       <li>if an illegal or innapropriate argument was passed to this method</li>
-    *    </ul>
+    *    if an illegal or inappropriate argument was passed to this method
     * @throws IndexOutOfBoundsException
     *    if the task is an empty list
     * @throws IOException
     *    if an I/O error occurs
     * @throws NullPointerException
     *    if an element in task list is null
-    * @throws SecurityException if a security manager exists and
+    * @throws SecurityException
+    *    if a security manager exists and
     *    <ul>
     *       <li>when attemping to start the process, its checkExec method doesn't allow creation of the subprocess, or</li>
     *       <li>its checkPermission method doesn't allow access to the process environment</li>
@@ -83,7 +82,7 @@ public final class Exec {
    public static Map<String,String> exec( List<String> task )
         throws IOException { 
 
-        return( exec( task, null, null, null ) );
+      return( exec( task, null, null, null ) );
 
    }
 
@@ -120,7 +119,7 @@ public final class Exec {
     *    a Map of key-value pairs defining the configuration; optional, can be empty or null
     * @return a Map of the result of the command execution
     * @throws IllegalArgumentException
-    *    if an illegal or innapropriate argument was passed to this method
+    *    if an illegal or inappropriate argument was passed to this method
     * @throws IndexOutOfBoundsException
     *    if the task is an empty list
     * @throws IOException
@@ -130,7 +129,8 @@ public final class Exec {
     *       <li>if an element in task list is null, or</li>
     *       <li>if defining an output file with a null pathname</li>
     *    </ul>
-    * @throws SecurityException if a security manager exists and
+    * @throws SecurityException
+    *    if a security manager exists and
     *    <ul>
     *       <li>when attemping to start the process</li>
     *       <ul>
@@ -148,7 +148,7 @@ public final class Exec {
    public static Map<String,String> exec( List<String> task, Map<String,String> config )
         throws IOException { 
 
-        return( exec( task, config, null, null ) );
+      return( exec( task, config, null, null ) );
 
    }
 
@@ -195,7 +195,7 @@ public final class Exec {
     * @return a Map of the result of the command execution
     * @throws IllegalArgumentException
     *    <ul>
-    *       <li>if an illegal or innapropriate argument was passed to this method</li>
+    *       <li>if an illegal or inappropriate argument was passed to this method</li>
     *       <li>if configuring environment variables and the system does not allow such modifications</li>
     *    </ul>
     * @throws IndexOutOfBoundsException
@@ -208,7 +208,8 @@ public final class Exec {
     *       <li>attempting to add null key environment variables, or</li> 
     *       <li>if defining an output file with a null pathname</li>
     *    </ul>
-    * @throws SecurityException if a security manager exists and
+    * @throws SecurityException
+    *    if a security manager exists and
     *    <ul>
     *       <li>when attemping to start the process</li>
     *       <ul>
@@ -423,9 +424,9 @@ public final class Exec {
     *
     * @param task
     *    the task to execute as a String List, where the first item is the command and any subsequent items are arguments; required
-    * @return a String result of the command execution
+    * @return a trimmed String result of the command execution
     * @throws IllegalArgumentException
-    *    if an illegal or innapropriate argument was passed to this method
+    *    if an illegal or inappropriate argument was passed to this method
     * @throws IndexOutOfBoundsException
     *    if the task is an empty list
     * @throws IOException
@@ -434,8 +435,8 @@ public final class Exec {
     *    if the task run as a command line process failed, e.g. it returned a non-zero exit value
     * @throws NullPointerException
     *    if an element in task list is null
-    * @throws SecurityException if a security manager exists and
-    *    when attemping to start the process, its checkExec method doesn't allow creation of the subprocess
+    * @throws SecurityException
+    *    if a security manager exists and, when attemping to start the process, its checkExec method doesn't allow creation of the subprocess
     * @throws UnsupportedOperationException
     *    if the operating system does not support the creation of processes
     */
@@ -472,7 +473,7 @@ public final class Exec {
     *    a Map of key-value pairs defining the configuration; optional, can be empty or null
     * @return a String result of the command execution
     * @throws IllegalArgumentException
-    *    if an illegal or innapropriate argument was passed to this method
+    *    if an illegal or inappropriate argument was passed to this method
     * @throws IndexOutOfBoundsException
     *    if the task is an empty list
     * @throws IOException
@@ -484,8 +485,8 @@ public final class Exec {
     *       <li>if an element in task list is null, or</li>
     *       <li>if defining an output file with a null pathname</li>
     *    </ul>
-    * @throws SecurityException if a security manager exists and
-    *    when attemping to start the process, its checkExec method doesn't allow creation of the subprocess
+    * @throws SecurityException
+    *    if a security manager exists and, when attemping to start the process, its checkExec method doesn't allow creation of the subprocess
     * @throws UnsupportedOperationException
     *    if the operating system does not support the creation of processes
     */
@@ -529,7 +530,7 @@ public final class Exec {
     * @return a String result of the command execution
     * @throws IllegalArgumentException
     *    <ul>
-    *       <li>if an illegal or innapropriate argument was passed to this method</li>
+    *       <li>if an illegal or inappropriate argument was passed to this method</li>
     *       <li>if configuring environment variables and the system does not allow such modifications</li>
     *    </ul>
     * @throws IndexOutOfBoundsException
@@ -544,7 +545,8 @@ public final class Exec {
     *       <li>attempting to add null key environment variables, or</li> 
     *       <li>if defining an output file with a null pathname</li>
     *    </ul>
-    * @throws SecurityException if a security manager exists and
+    * @throws SecurityException
+    *    if a security manager exists and
     *    <ul>
     *       <li>when attemping to start the process, its checkExec method doesn't allow creation of the subprocess, or</li>
     *       <li>when attemping to configure the environment variables, its checkPermission method doesn't allow access to the process environment, or</li>
