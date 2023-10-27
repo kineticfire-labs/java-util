@@ -21,7 +21,8 @@ package com.kineticfire.util
 import java.nio.file.Path
 import java.io.File
 import java.util.Map
-import java.util.HashMap
+import java.util.List;
+import java.io.IOException;
 import static java.util.concurrent.TimeUnit.MINUTES
 
 import spock.lang.Specification
@@ -38,26 +39,25 @@ import spock.lang.Timeout
 @Timeout( value = 1, unit = MINUTES )
 class SysTest extends Specification {
 
-    static final String SCRIPT_FILE_NAME  = 'test.sh'
+    static final String SCRIPT_NAME  = 'test.sh'
 
 
     @TempDir
     Path tempDir
 
-    File scriptFile
+    File script
 
 
     def setup( ) {
-        scriptFile = new File( tempDir.toString( ) + File.separatorChar + SCRIPT_FILE_NAME )
+        script = new File( tempDir.toString( ) + File.separatorChar + SCRIPT_NAME )
     }
 
 
 
-    def "validateScript(String scriptPath) for correct script"( ) {
-        given: "a valid bash script"
+    def "validateScript(Path script) for valid script with path as a Path"( ) {
 
-        // must put the shebang on the first line
-        scriptFile <<
+        given: "a valid bash script"
+        script <<
             """#!/bin/env bash
 
             if [ "\$1" == "sayhi" ]; then
@@ -70,15 +70,10 @@ class SysTest extends Specification {
         """.stripIndent( )
 
         when: "validate the bash script"
-        //Map<String,String> resultMap = Sys.validateScript( scriptFile.getAbsolutePath( ) )
+        Path scriptPath = Path.of( script.getAbsolutePath( ) )
+        Map<String,String> resultMap = Sys.validateScript( scriptPath )
 
-
-        //todo
-        then: "todo"
-        1 == 1
-        /*
-
-        and: "map key 'ok' should be true"
+        then: "map key 'ok' should be true"
         resultMap.ok.equals( 'true' )
 
         and: "map key 'exitValue' should be 0"
@@ -87,22 +82,78 @@ class SysTest extends Specification {
         and: "map key 'out' should be an empty String"
         resultMap.out.equals( '' )
 
-        // the error output, if any, from shellcheck is captured in 'out'
         and: "map key 'err' should not exist"
         !resultMap.containsKey( 'err' )
-
-        // ensures that 'success' key from underlying methods not passed through
-        and: "map should not contain key 'success'"
-        !resultMap.containsKey( 'success' )
-        */
     }
 
-    /*
-    def "validateScript(String scriptPath) for script error"( ) {
-        given:
 
-        // must put the shebang on the first line
-        scriptFile <<
+    def "validateScript(File script) for valid script with path as a File"( ) {
+
+        given: "a valid bash script"
+        script <<
+            """#!/bin/env bash
+
+            if [ "\$1" == "sayhi" ]; then
+                echo "Hi"
+            elif [ "\$1" == "sayhello" ]; then
+                echo "Hello"
+            fi
+
+            exit 0
+        """.stripIndent( )
+
+        when: "validate the bash script"
+        Map<String,String> resultMap = Sys.validateScript( script )
+
+        then: "map key 'ok' should be true"
+        resultMap.ok.equals( 'true' )
+
+        and: "map key 'exitValue' should be 0"
+        resultMap.exitValue.equals( '0' )
+
+        and: "map key 'out' should be an empty String"
+        resultMap.out.equals( '' )
+
+        and: "map key 'err' should not exist"
+        !resultMap.containsKey( 'err' )
+    }
+
+
+    def "validateScript(String script) for valid script with path as a String"( ) {
+
+        given: "a valid bash script"
+        script <<
+            """#!/bin/env bash
+
+            if [ "\$1" == "sayhi" ]; then
+                echo "Hi"
+            elif [ "\$1" == "sayhello" ]; then
+                echo "Hello"
+            fi
+
+            exit 0
+        """.stripIndent( )
+
+        when: "validate the bash script"
+        Map<String,String> resultMap = Sys.validateScript( script.getAbsolutePath( ) )
+
+        then: "map key 'ok' should be true"
+        resultMap.ok.equals( 'true' )
+
+        and: "map key 'exitValue' should be 0"
+        resultMap.exitValue.equals( '0' )
+
+        and: "map key 'out' should be an empty String"
+        resultMap.out.equals( '' )
+
+        and: "map key 'err' should not exist"
+        !resultMap.containsKey( 'err' )
+    }
+
+    def "validateScript(String script) for invalid script returns description of why script is invalid"( ) {
+
+        given:
+        script <<
             """#!/bin/env bash
 
             if [ "\$1" == "sayhi" ]; then
@@ -115,8 +166,7 @@ class SysTest extends Specification {
         """.stripIndent( )
 
         when:
-
-        def resultMap = Sys.validateScript( scriptFile.getAbsolutePath( ) )
+        Map<String,String> resultMap = Sys.validateScript( script.getAbsolutePath( ) )
 
         then: "map key 'ok' should be false"
         resultMap.ok.equals( 'false' )
@@ -124,17 +174,44 @@ class SysTest extends Specification {
         and: "map key 'exitValue' should be 1"
         resultMap.exitValue.equals( '1' )
 
-        and: "map key 'out' should contain an explanation of the failure"
+        and: "map key 'out' should contain an explanation of why the script is invalid"
         resultMap.out.contains( "Couldn't find 'fi' for this 'if'" )
 
-        // the error output, if any, from shellcheck is captured in 'out'
         and: "map key 'err' should not exist"
-        !resultMap.containsKey( 'err' )
-
-        // ensures that 'success' key from underlying methods not passed through
-        and: "map should not contain key 'success'"
-        !resultMap.containsKey( 'success' )
+        resultMap.err.equals( '' )
     }
-    */
+
+    def "validateScript(String script) for invalid script path returns error"( ) {
+
+        given:
+        String badScriptPath = script.getAbsolutePath( ) + '.bad'
+
+        when:
+        Map<String,String> resultMap = Sys.validateScript( badScriptPath )
+
+        then: "map key 'ok' should be false"
+        resultMap.ok.equals( 'false' )
+
+        and: "map key 'exitValue' should be 2"
+        resultMap.exitValue.equals( '2' )
+
+        and: "map key 'out' should be empty string"
+        resultMap.out.equals( '' )
+
+        and: "map key 'err' contains the error description"
+        resultMap.err.contains( 'does not exist' )
+    }
+
+    def "validateScript(String script) for null script path throws exception"( ) {
+
+        given:
+        String nullScriptPath = null
+
+        when:
+        Map<String,String> resultMap = Sys.validateScript( nullScriptPath )
+
+        then: "exception thrown"
+        thrown NullPointerException
+    }
 
 }

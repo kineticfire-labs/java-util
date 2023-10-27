@@ -20,6 +20,10 @@ package com.kineticfire.util;
 import java.nio.file.Path;
 import java.io.File;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Arrays;
+import java.io.IOException;
 
 
 
@@ -35,6 +39,7 @@ public final class Sys {
     * <p>
     * Returns a Map (unless an exception is thrown) with key-value pairs:
     * <ul>
+    *    <li>ok - String "true" if the script validated and String "false" otherwise; a "false" return value could indicate that the script failed validation or that an error occurred before validation; check the "exitValue", "out", and "err" values</li>
     *    <li>exitValue - the String representation of the integer exit value returned by the process; OS-specific meaning, where for Unix-like platforms the value is on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>
     *    <li>out - the output returned by the process as a trimmed String, which could be an empty String; always defined</li>
     *    <li>err - contains the error output returned by the process as a trimmed String; defined if an error occurred (e.g. exitValue is non-zero)</li>                                                  
@@ -61,8 +66,11 @@ public final class Sys {
     *       <li>if the operating system is not supported by this method</li>
     *    </ul>
     */
-   public static Map<String,String> validateScript( Path script ) {
+   public static Map<String,String> validateScript( Path script )
+      throws IOException {
+
       return( validateScript( script.toString( ) ) );
+
    }
 
 
@@ -71,6 +79,7 @@ public final class Sys {
     * <p>
     * Returns a Map (unless an exception is thrown) with key-value pairs:
     * <ul>
+    *    <li>ok - String "true" if the script validated and String "false" otherwise; a "false" return value could indicate that the script failed validation or that an error occurred before validation; check the "exitValue", "out", and "err" values</li>
     *    <li>exitValue - the String representation of the integer exit value returned by the process; OS-specific meaning, where for Unix-like platforms the value is on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>
     *    <li>out - the output returned by the process as a trimmed String, which could be an empty String; always defined</li>
     *    <li>err - contains the error output returned by the process as a trimmed String; defined if an error occurred (e.g. exitValue is non-zero)</li>                                                  
@@ -110,6 +119,7 @@ public final class Sys {
     * <p>
     * Returns a Map (unless an exception is thrown) with key-value pairs:
     * <ul>
+    *    <li>ok - String "true" if the script validated and String "false" otherwise; a "false" return value could indicate that the script failed validation or that an error occurred before validation; check the "exitValue", "out", and "err" values</li>
     *    <li>exitValue - the String representation of the integer exit value returned by the process; OS-specific meaning, where for Unix-like platforms the value is on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>
     *    <li>out - the output returned by the process as a trimmed String, which could be an empty String; always defined</li>
     *    <li>err - contains the error output returned by the process as a trimmed String; defined if an error occurred (e.g. exitValue is non-zero)</li>                                                  
@@ -137,7 +147,7 @@ public final class Sys {
     *    </ul>
     */
    public static Map<String,String> validateScript( String script )
-         throws IOException {
+         throws IOException, UnsupportedOperationException {
 
       Map<String,String> responseMap = new HashMap<String,String>( );
 
@@ -147,10 +157,12 @@ public final class Sys {
          throw new UnsupportedOperationException( "Script validation not supported on Windows." );
       } else if ( os.indexOf( "mac" ) >= 0 ) {
          throw new UnsupportedOperationException( "Script validation not supported on Mac." );
-      } else if ( os.indexOf( "nix" ) >= 0 ) {
+      } else if ( os.indexOf( "nux" ) >= 0 || os.indexOf( "nix" ) >= 0 ) {
          responseMap = validateScriptForUnixLikePlatform( script );
       } else if ( os.indexOf( "sunos" ) >= 0 ) {
          throw new UnsupportedOperationException( "Script validation is not supported on SunOS." );
+      } else {
+         throw new UnsupportedOperationException( "OS '" + System.getProperty( "os.name" ) + "' not supported by this method" );
       }
 
       return( responseMap );
@@ -164,6 +176,7 @@ public final class Sys {
     * <p>
     * Returns a Map (unless an exception is thrown) with key-value pairs:
     * <ul>
+    *    <li>ok - String "true" if the script validated and String "false" otherwise; a "false" return value could indicate that the script failed validation or that an error occurred before validation; check the "exitValue" and "err" values</li>
     *    <li>exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>
     *    <li>out - the output returned by the process as a trimmed String, which could be an empty String; always defined</li>
     *    <li>err - contains the error output returned by the process as a trimmed String; defined if an error occurred (e.g. exitValue is non-zero)</li>                                                  
@@ -194,20 +207,20 @@ public final class Sys {
     * @throws UnsupportedOperationException
     *    if the operating system does not support the creation of processes
     */
-   private static Map<String,String> validateScriptForUnixLikePlatform( String script ) 
+   private static Map<String,String> validateScriptForUnixLikePlatform( String script )
       throws IOException {
 
-      List<String> task = Arrays.asList( "shellcheck", script )
+      List<String> task = Arrays.asList( "shellcheck", script );
 
-      Map<String,String> responseMap = ExecUtils.exec( task );
+      Map<String,String> responseMap = Exec.exec( task );
 
       if ( responseMap.get( "exitValue" ).equals( "0" ) ) {
-         responseMap.ok = "true"
+         responseMap.put( "ok", "true" );
       } else {
-         responseMap.ok = "false"
+         responseMap.put( "ok", "false" );
       }
 
-      return( responseMap )
+      return( responseMap );
 
    }
 
