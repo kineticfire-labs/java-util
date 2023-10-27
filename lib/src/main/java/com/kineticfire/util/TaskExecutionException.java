@@ -24,6 +24,7 @@ package com.kineticfire.util;
  */
 public class TaskExecutionException extends Exception {
 
+   /** the exit value returned by the process */
    private int exitValue;
 
 

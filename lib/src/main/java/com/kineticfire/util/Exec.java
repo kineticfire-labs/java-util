@@ -132,15 +132,14 @@ public final class Exec {
     * @throws SecurityException
     *    if a security manager exists and
     *    <ul>
-    *       <li>when attemping to start the process</li>
-    *       <ul>
-    *          <li>its checkExec method doesn't allow creation of the subprocess, or</li>
-    *          <li>the standard input to the subprocess was redirected from a file and the security manager's checkRead method denies read access to the file, or</li>
-    *          <li>the standard output or standard error of the subprocess was redirected to a file and the security manager's checkWrite method denies write access to the file, or</li>
-    *       </ul>
-    *       <ul>
-    *          <li>its checkPermission method doesn't allow access to the process environment</li>
-    *       </ul>
+    *       <li>when attemping to start the process
+    *          <ul>
+    *             <li>its checkExec method doesn't allow creation of the subprocess, or</li>
+    *             <li>the standard input to the subprocess was redirected from a file and the security manager's checkRead method denies read access to the file, or</li>
+    *             <li>the standard output or standard error of the subprocess was redirected to a file and the security manager's checkWrite method denies write access to the file, or</li>
+    *          </ul>
+    *       </li>
+    *       <li>its checkPermission method doesn't allow access to the process environment</li>
     *    </ul>
     * @throws UnsupportedOperationException
     *    if the operating system does not support the creation of processes
@@ -211,16 +210,18 @@ public final class Exec {
     * @throws SecurityException
     *    if a security manager exists and
     *    <ul>
-    *       <li>when attemping to start the process</li>
-    *       <ul>
-    *          <li>its checkExec method doesn't allow creation of the subprocess, or</li>
-    *          <li>the standard input to the subprocess was redirected from a file and the security manager's checkRead method denies read access to the file, or</li>
-    *          <li>the standard output or standard error of the subprocess was redirected to a file and the security manager's checkWrite method denies write access to the file, or</li>
-    *       </ul>
-    *       <li>when attemping to configure the environment variables</li>
-    *       <ul>
-    *          <li>its checkPermission method doesn't allow access to the process environment</li>
-    *       </ul>
+    *       <li>when attemping to start the process
+    *          <ul>
+    *             <li>its checkExec method doesn't allow creation of the subprocess, or</li>
+    *             <li>the standard input to the subprocess was redirected from a file and the security manager's checkRead method denies read access to the file, or</li>
+    *             <li>the standard output or standard error of the subprocess was redirected to a file and the security manager's checkWrite method denies write access to the file, or</li>
+    *          </ul>
+    *       </li>
+    *       <li>when attemping to configure the environment variables
+    *          <ul>
+    *             <li>its checkPermission method doesn't allow access to the process environment</li>
+    *          </ul>
+    *       </li>
     *    </ul>
     * @throws UnsupportedOperationException
     *    <ul>
@@ -418,7 +419,6 @@ public final class Exec {
     * This method is a convenience method for 'execExceptionOnTaskFail(List&lt;String&gt;,null,null,null)' which is similar to 'exec(...)', except that method returns a Map&lt;String,String&gt; result for successful or failed command line task and an exception in other cases while this method returns the output of the task as a String if succesful and otherwise throws an exception on any failure (including command line task failure).  A limitation of 'execExceptionOnTaskFail(...)' is that standard error cannot be redirected--to standard out or to a file--as with 'exec(...)' because task errors need to be observed by this method in order to throw the exception.  Information from standard error is available in the thrown exception.
     * <p>
     * The first item in the task list is treated as the command and any additional items are treated as parameters.  Required.
-    * <p>
     * <p>
     * Returns a String result of the task execution on success, and throws an exception on any error.  An empty String may be returned by the task.
     *
