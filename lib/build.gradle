@@ -63,58 +63,100 @@ tasks.named( 'test' ) {
 }
 
 
+def commonJarManifestMap = [
+        'Implementation-Vendor'  : 'KineticFire Labs',
+        'Implementation-Project' : getProperty( 'project.title' ),
+        'Implementation-Release' : getProperty( 'project.release'),
+        'Implementation-Title'   : getProperty( 'java-util.lib.title' ),
+        'Implementation-Version' : getProperty( 'java-util.lib.version'),
+        'Implementation-URL'     : 'https://github.com/kineticfire-labs/java-util/'
+    ]
+
+
+
+def classesJarManifestMap = [:]
+classesJarManifestMap.putAll( commonJarManifestMap )
+classesJarManifestMap.put( 'Name', 'com/kineticfire/util/' )
+classesJarManifestMap.put( 'Sealed', 'true' )
+
 jar {
     archiveBaseName = getProperty( 'java-util.lib.name' )
     archiveVersion = getProperty( 'java-util.lib.version' )
 
     manifest {
         attributes(
-            'Implementation-Vendor'  : 'KineticFire Labs',
-            'Implementation-Title'   : getProperty( 'java-util.lib.name' ),
-            'Implementation-Version' : getProperty( 'java-util.lib.version'),
-            'Implementation-Project' : 'java-util',
-            'Implementation-Release' : getProperty( 'project.release'),
-            'Sealed'                 : 'true'
+            classesJarManifestMap
         )
+    }
+
+    from( rootProject.projectDir ) {
+        include 'LICENSE/'
     }
 }
 
 task javadocJar( type: Jar ) {
+
     archiveClassifier = 'javadoc'
     from javadoc
 
-    archiveBaseName = 'java-util'
+    archiveBaseName = getProperty( 'java-util.lib.name' )
     archiveVersion = getProperty( 'java-util.lib.version' )
 
     manifest {
         attributes(
-            'Implementation-Vendor'  : 'KineticFire Labs',
-            'Implementation-Title'   : getProperty( 'java-util.lib.name' ),
-            'Implementation-Version' : getProperty( 'java-util.lib.version'),
-            'Implementation-Project' : 'java-util',
-            'Implementation-Release' : getProperty( 'project.release'),
+            commonJarManifestMap
         )
+    }
+
+    from( rootProject.projectDir ) {
+        include 'LICENSE/'
     }
 }
 
 task sourcesJar( type: Jar ) {
+
     archiveClassifier = 'sources'
     from sourceSets.main.allSource
 
-    archiveBaseName = 'java-util'
+    archiveBaseName = getProperty( 'java-util.lib.name' )
     archiveVersion = getProperty( 'java-util.lib.version' )
 
     manifest {
         attributes(
-            'Implementation-Vendor'  : 'KineticFire Labs',
-            'Implementation-Title'   : getProperty( 'java-util.lib.name' ),
-            'Implementation-Version' : getProperty( 'java-util.lib.version'),
-            'Implementation-Project' : 'java-util',
-            'Implementation-Release' : getProperty( 'project.release'),
+            commonJarManifestMap
         )
+    }
+
+    from( rootProject.projectDir ) {
+        include 'LICENSE/'
     }
 }
 
 artifacts {
     archives javadocJar, sourcesJar
+}
+
+
+
+tasks.register( 'notes' ) {
+    doLast {
+
+        println """
+--------------------------------------------------------------------
+Notes to build & release the project:
+--------------------------------------------------------------------
+
+--------------------------------------------------------------------
+Development
+
+    - Test then build classes, sources, and javadocs JARs.
+        => build
+
+--------------------------------------------------------------------
+Release
+    - tbd
+"""
+
+    }
+
 }
