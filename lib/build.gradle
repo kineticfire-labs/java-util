@@ -138,23 +138,38 @@ artifacts {
 
 
 
-tasks.register( 'notes' ) {
+tasks.register( 'readme' ) {
+    group 'Help'
+    description 'Displays an overview of the project and directions for building and releasing the project.'
     doLast {
 
         println """
 --------------------------------------------------------------------
-Notes to build & release the project:
+readme
 --------------------------------------------------------------------
 
 --------------------------------------------------------------------
-Development
+Overview
 
-    - Test then build classes, sources, and javadocs JARs.
-        => build
+    Purpose:  Build and publish to Central Repository the 'java-util' project artifacts.
+
+    Artifacts Produced
+        - java-util-<version>.jar
+        - java-util-<version>-javadoc.jar
+        - java-util-<version>-sources.jar
 
 --------------------------------------------------------------------
-Release
-    - tbd
+Building & Releasing
+
+    --------------------------------------------------------------------
+    Development
+
+        - Test then build classes, sources, and javadocs JARs.
+            => build
+
+    --------------------------------------------------------------------
+    Release
+        - tbd
 """
 
     }
