@@ -13,28 +13,3 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
-# project
-project_title=Java Util
-project_release=1.0.0
-project_copyrightYears=2023
-
-
-# artifacts
-javaUtil_lib_title=Java Util
-javaUtil_lib_name=java-util
-javaUtil_lib_version=1.0.0
-
-
-# configurations
-javaLanguage_version=21
-
-
-# dependencies
-groovy_version=4.0.15
-spockCore_version=2.4-M1-groovy-4.0
-junit_version=5.10.0
-apacheCommonsMath3_version=3.6.1
-guava_version=32.1.3-jre
-hierynomus_version=0.16.1
