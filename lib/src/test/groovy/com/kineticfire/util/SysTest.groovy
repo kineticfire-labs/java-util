@@ -73,8 +73,8 @@ class SysTest extends Specification {
         Path scriptPath = Path.of( script.getAbsolutePath( ) )
         Map<String,String> resultMap = Sys.validateScript( scriptPath )
 
-        then: "map key 'ok' should be true"
-        resultMap.ok.equals( 'true' )
+        then: "map key 'isValid' should be true"
+        resultMap.isValid.equals( 'true' )
 
         and: "map key 'exitValue' should be 0"
         resultMap.exitValue.equals( '0' )
@@ -105,8 +105,8 @@ class SysTest extends Specification {
         when: "validate the bash script"
         Map<String,String> resultMap = Sys.validateScript( script )
 
-        then: "map key 'ok' should be true"
-        resultMap.ok.equals( 'true' )
+        then: "map key 'isValid' should be true"
+        resultMap.isValid.equals( 'true' )
 
         and: "map key 'exitValue' should be 0"
         resultMap.exitValue.equals( '0' )
@@ -137,8 +137,8 @@ class SysTest extends Specification {
         when: "validate the bash script"
         Map<String,String> resultMap = Sys.validateScript( script.getAbsolutePath( ) )
 
-        then: "map key 'ok' should be true"
-        resultMap.ok.equals( 'true' )
+        then: "map key 'isValid' should be true"
+        resultMap.isValid.equals( 'true' )
 
         and: "map key 'exitValue' should be 0"
         resultMap.exitValue.equals( '0' )
@@ -168,8 +168,8 @@ class SysTest extends Specification {
         when:
         Map<String,String> resultMap = Sys.validateScript( script.getAbsolutePath( ) )
 
-        then: "map key 'ok' should be false"
-        resultMap.ok.equals( 'false' )
+        then: "map key 'isValid' should be false"
+        resultMap.isValid.equals( 'false' )
 
         and: "map key 'exitValue' should be 1"
         resultMap.exitValue.equals( '1' )
@@ -189,8 +189,8 @@ class SysTest extends Specification {
         when:
         Map<String,String> resultMap = Sys.validateScript( badScriptPath )
 
-        then: "map key 'ok' should be false"
-        resultMap.ok.equals( 'false' )
+        then: "map key 'isValid' should be false"
+        resultMap.isValid.equals( 'false' )
 
         and: "map key 'exitValue' should be 2"
         resultMap.exitValue.equals( '2' )

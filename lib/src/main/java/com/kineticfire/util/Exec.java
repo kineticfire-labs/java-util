@@ -106,6 +106,7 @@ public final class Exec {
     *    <li>redirectErrFilePath - redirect standard error by providing a file path and name of the error file; must also define 'redirectErrType' otherwise an exception is thrown; cannot use in conjection with 'redirectErrToFile' otherwise an error is thrown; optional, defaults to return standard error in Map key 'err'</li>
     *    <li>redirectErrType - 'overwrite' to overwrite the contents of the file and 'append' to append additional output to existing file contents; required if defining 'redirectErrFilePath', otherwise defining will throw an exception</li>
     * </ul>
+    * <p>
     * Returns a Map (unless an exception is thrown) with key-value pairs:
     * <ul>
     *    <li>exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>

@@ -39,7 +39,7 @@ public final class Sys {
     * <p>
     * Returns a Map (unless an exception is thrown) with key-value pairs:
     * <ul>
-    *    <li>ok - String "true" if the script validated and String "false" otherwise; a "false" return value could indicate that the script failed validation or that an error occurred before validation; check the "exitValue", "out", and "err" values</li>
+    *    <li>isValid - String "true" if the script validated and String "false" otherwise; a "false" return value could indicate that the script failed validation or that an error occurred before validation; check the "exitValue", "out", and "err" values</li>
     *    <li>exitValue - the String representation of the integer exit value returned by the process; OS-specific meaning, where for Unix-like platforms the value is on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>
     *    <li>out - the output returned by the process as a trimmed String, which could be an empty String; always defined</li>
     *    <li>err - contains the error output returned by the process as a trimmed String; defined if an error occurred (e.g. exitValue is non-zero)</li>                                                  
@@ -79,7 +79,7 @@ public final class Sys {
     * <p>
     * Returns a Map (unless an exception is thrown) with key-value pairs:
     * <ul>
-    *    <li>ok - String "true" if the script validated and String "false" otherwise; a "false" return value could indicate that the script failed validation or that an error occurred before validation; check the "exitValue", "out", and "err" values</li>
+    *    <li>isValid - String "true" if the script validated and String "false" otherwise; a "false" return value could indicate that the script failed validation or that an error occurred before validation; check the "exitValue", "out", and "err" values</li>
     *    <li>exitValue - the String representation of the integer exit value returned by the process; OS-specific meaning, where for Unix-like platforms the value is on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>
     *    <li>out - the output returned by the process as a trimmed String, which could be an empty String; always defined</li>
     *    <li>err - contains the error output returned by the process as a trimmed String; defined if an error occurred (e.g. exitValue is non-zero)</li>                                                  
@@ -119,7 +119,7 @@ public final class Sys {
     * <p>
     * Returns a Map (unless an exception is thrown) with key-value pairs:
     * <ul>
-    *    <li>ok - String "true" if the script validated and String "false" otherwise; a "false" return value could indicate that the script failed validation or that an error occurred before validation; check the "exitValue", "out", and "err" values</li>
+    *    <li>isValid - String "true" if the script validated and String "false" otherwise; a "false" return value could indicate that the script failed validation or that an error occurred before validation; check the "exitValue", "out", and "err" values</li>
     *    <li>exitValue - the String representation of the integer exit value returned by the process; OS-specific meaning, where for Unix-like platforms the value is on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>
     *    <li>out - the output returned by the process as a trimmed String, which could be an empty String; always defined</li>
     *    <li>err - contains the error output returned by the process as a trimmed String; defined if an error occurred (e.g. exitValue is non-zero)</li>                                                  
@@ -176,7 +176,7 @@ public final class Sys {
     * <p>
     * Returns a Map (unless an exception is thrown) with key-value pairs:
     * <ul>
-    *    <li>ok - String "true" if the script validated and String "false" otherwise; a "false" return value could indicate that the script failed validation or that an error occurred before validation; check the "exitValue" and "err" values</li>
+    *    <li>isValid - String "true" if the script validated and String "false" otherwise; a "false" return value could indicate that the script failed validation or that an error occurred before validation; check the "exitValue" and "err" values</li>
     *    <li>exitValue - the String representation of the integer exit value returned by the process on the range of [0,255]; 0 for success and other values indicate an error; always defined</li>
     *    <li>out - the output returned by the process as a trimmed String, which could be an empty String; always defined</li>
     *    <li>err - contains the error output returned by the process as a trimmed String; defined if an error occurred (e.g. exitValue is non-zero)</li>                                                  
@@ -215,9 +215,9 @@ public final class Sys {
       Map<String,String> responseMap = Exec.exec( task );
 
       if ( responseMap.get( "exitValue" ).equals( "0" ) ) {
-         responseMap.put( "ok", "true" );
+         responseMap.put( "isValid", "true" );
       } else {
-         responseMap.put( "ok", "false" );
+         responseMap.put( "isValid", "false" );
       }
 
       return( responseMap );
