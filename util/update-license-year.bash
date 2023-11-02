@@ -82,6 +82,7 @@ function replaceBySpecificFiles {
 
 
 function replaceProperty {
+   echo "Updating year to '$year' for property 'project_copyrightYears' in file '../lib/gradle.properties'"
    sed -i'' -e "s/project_copyrightYears=20[2-9][0-9]\(-20[2-9][0-9]\)\?/project_copyrightYears=$year/g" "../lib/gradle.properties"
 }
 
