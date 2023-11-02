@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+ import org.cyclonedx.model.OrganizationalContact
+ import org.cyclonedx.model.License
+ import org.cyclonedx.model.AttachmentText
+
 
 
 plugins {
@@ -24,6 +28,8 @@ plugins {
     id 'java-library'
 
     id 'com.github.hierynomus.license' version "${hierynomus_version}"
+
+    id 'org.cyclonedx.bom' version "${cyloneDX_version}"
 }
 
 
@@ -31,6 +37,7 @@ repositories {
     // Use Maven Central for resolving dependencies.
     mavenCentral( )
 }
+
 
 dependencies {
 
@@ -46,9 +53,6 @@ dependencies {
     // This dependency is exported to consumers, that is to say found on their compile classpath.
     api "org.apache.commons:commons-math3:${apacheCommonsMath3_version}"
 
-    // This dependency is used internally, and not exposed to consumers on their own compile classpath.
-    implementation "com.google.guava:guava:${guava_version}"
-
 }
 
 
@@ -59,10 +63,12 @@ java {
     }
 }
 
+
 tasks.named( 'test' ) {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform( )
 }
+
 
 javadoc {
     options.bottom = "Copyright (c) ${project_copyrightYears} KineticFire.  All rights reserved."
@@ -85,6 +91,7 @@ classesJarManifestMap.putAll( commonJarManifestMap )
 classesJarManifestMap.put( 'Name', 'com/kineticfire/util/' )
 classesJarManifestMap.put( 'Sealed', 'true' )
 
+
 jar {
     archiveBaseName = "${javaUtil_lib_name}"
     archiveVersion = "${javaUtil_lib_version}"
@@ -99,6 +106,7 @@ jar {
         include 'LICENSE/'
     }
 }
+
 
 task javadocJar( type: Jar ) {
 
@@ -119,6 +127,7 @@ task javadocJar( type: Jar ) {
     }
 }
 
+
 task sourcesJar( type: Jar ) {
 
     archiveClassifier = 'sources'
@@ -138,6 +147,7 @@ task sourcesJar( type: Jar ) {
     }
 }
 
+
 artifacts {
     archives javadocJar, sourcesJar
 }
@@ -149,6 +159,36 @@ license {
     mapping( 'java', 'SLASHSTAR_STYLE' )
 }
 
+
+cyclonedxBom {
+
+    OrganizationalContact organizationalContact = new OrganizationalContact()
+    organizationalContact.setEmail( 'hello@kineticfire.com' )
+
+    organizationalEntity {oe->
+        oe.name = 'KineticFire Labs'
+        oe.url = ['https://labs.kineticfire.com/', 'https://github.com/kineticfire-labs/java-util/']
+        oe.addContact( organizationalContact )
+    }
+
+    projectType = 'library'
+
+    outputName = "${javaUtil_lib_name}-${javaUtil_lib_version}-cyclonedx"
+
+    includeConfigs = ['implementation']
+    skipConfigs = ['testImplementation', 'testRuntimeOnly', 'api']
+
+    AttachmentText attachmentText = new AttachmentText( )
+    attachmentText.setText( "Copyright (c) ${project_copyrightYears} KineticFire. All rights reserved.  Licensed under the Apache License, Version 2.0.  See included 'LICENSE' file or license URL." )
+
+    License license = new License( )
+    license.setLicenseText( attachmentText );
+    license.setId( 'Apache-2.0' )
+    license.setUrl( 'https://www.apache.org/licenses/LICENSE-2.0' )
+    licenseChoice {lc->
+        lc.addLicense( license )
+    }
+}
 
 
 
