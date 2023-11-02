@@ -58,7 +58,10 @@ function replaceByFileExtension {
 
    searchReplaceRegexString=$(getSearchReplaceRegexString)
 
-   echo "Updating year to '$year' for files with extensions of: '$fileExtensions'"
+   echo "Updating year to '$year' for files with extensions of:"
+   for element in "${fileExtensionsArray[@]}"; do
+      echo "   $element"
+   done
 
    find ../. -type f -regex ".*\.\($fileExtensionsPattern\)" -print0 | xargs -0 sed -i'' -e "$searchReplaceRegexString"
 }
@@ -82,7 +85,8 @@ function replaceBySpecificFiles {
 
 
 function replaceProperty {
-   echo "Updating year to '$year' for property 'project_copyrightYears' in file '../lib/gradle.properties'"
+   echo "Updating year to '$year' for:"
+   echo "   property 'project_copyrightYears' in file '../lib/gradle.properties'"
    sed -i'' -e "s/project_copyrightYears=20[2-9][0-9]\(-20[2-9][0-9]\)\?/project_copyrightYears=$year/g" "../lib/gradle.properties"
 }
 
@@ -101,9 +105,13 @@ EOF
 function main( ) {
 
     if [[ $# -eq 1 ]]; then
+        echo ''
         replaceByFileExtension "$@"
+        echo ''
         replaceBySpecificFiles "$@"
+        echo ''
         replaceProperty "$@"
+        echo ''
     else
         echo "Error:  Invalid arguments"
         help
