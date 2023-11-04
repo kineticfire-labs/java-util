@@ -33,10 +33,10 @@ plugins {
 }
 
 
-// properties that must be set that define versions; set on command line with -Pproperty=value
+// properties that define versions that either must be set or default to a value of 'latest'; set on command line with -Pproperty=value
 def requiredVersionPropertyList = ['project_release', 'javaUtil_lib_version']
 
-// throw exception, stopping build, if property not set or doesn't satisfy version format
+// throw exception, stopping build, if property doesn't satisfy version format
 checkRequiredVersionPropertyList( requiredVersionPropertyList )
 
 
@@ -242,7 +242,7 @@ Building & Releasing
 
 
 /**
- * Checks that required properties are defined and that their values adhere to the required format, throwing an error if either of those two criteria are violated.
+ * Checks that required properties' values adhere to the required format, throwing an error if not.  If not set, then sets the property value to 'latest'.
  * <p>
  * A valid format is 'latest' or:
  * <ul>
@@ -262,13 +262,15 @@ void checkRequiredVersionPropertyList( propertyList ) {
             String value = project[property]
 
             if ( ( value ==~ /(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)/ ) || value ==~ /latest/ ) {
-                println "Set property as:  $property=$value"
+                println "Property defined, setting:  $property=$value"
             } else {
                 throw new GradleException( "Value for property $property did match required format." )
             }
 
         } else {
-            throw new GradleException( "Required property $property is not set." )
+            String value = 'latest'
+            ext[property]=value
+            println "Property not defined, setting to default:  $property=$value"
         }
 
     }
