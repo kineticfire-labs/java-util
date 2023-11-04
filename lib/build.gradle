@@ -33,6 +33,14 @@ plugins {
 }
 
 
+// properties that must be set that define versions; set on command line with -Pproperty=value
+def requiredVersionPropertyList = ['project_release', 'javaUtil_lib_version']
+
+// throw exception, stopping build, if property not set or doesn't satisfy version format
+checkRequiredVersionPropertyList( requiredVersionPropertyList )
+
+
+
 repositories {
     // Use Maven Central for resolving dependencies.
     mavenCentral( )
@@ -190,6 +198,8 @@ cyclonedxBom {
     }
 }
 
+build.finalizedBy( 'cyclonedxBom' )
+
 
 
 tasks.register( 'readme' ) {
@@ -218,8 +228,8 @@ Building & Releasing
     --------------------------------------------------------------------
     Development
 
-        - Test then build classes, sources, and javadocs JARs.
-            => build
+        - Test; build classes, sources, and javadocs JARs; produce CycloneDX SBOMs
+            => ./gradlew -Pproject_release=<version> -PjavaUtil_lib_version=<version> clean build
 
     --------------------------------------------------------------------
     Release
@@ -229,3 +239,40 @@ Building & Releasing
     }
 
 }
+
+
+/**
+ * Checks that required properties are defined and that their values adhere to the required format, throwing an error if either of those two criteria are violated.
+ * <p>
+ * A valid format is 'latest' or:
+ * <ul>
+ *    <li>takes the form &lt;number&gt;.&lt;number&gt;.&lt;number&gt; where the series of three numbers separated by dots would typically represent &lt;major&gt;.&lt;minor&gt;.&lt;fix&gt;</li>
+ *    <li>each 'number' is a non-negative integer consisting of one or more digits 0-9 such that a number cannot have a leading '0' (but a 'number' can be exactly '0')</li>
+ * </ul>
+ *
+ * @param propertyList
+ *    a list of String properties to check
+ */
+void checkRequiredVersionPropertyList( propertyList ) {
+
+    for ( String property : propertyList ) {
+
+        if ( project.hasProperty( property ) ) {
+
+            String value = project[property]
+
+            if ( ( value ==~ /(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)/ ) || value ==~ /latest/ ) {
+                println "Set property as:  $property=$value"
+            } else {
+                throw new GradleException( "Value for property $property did match required format." )
+            }
+
+        } else {
+            throw new GradleException( "Required property $property is not set." )
+        }
+
+    }
+
+}
+
+
